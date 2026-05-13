@@ -1,0 +1,195 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Users, AlertTriangle, Banknote, ShieldCheck } from "lucide-react";
+import { Sidebar } from "@/components/dashboard/Sidebar";
+import { UploadZone } from "@/components/upload/UploadZone";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { ProcessingView } from "@/components/processing/ProcessingView";
+import { ResultsTable } from "@/components/table/ResultsTable";
+import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
+import { PaymentModal } from "@/components/modal/PaymentModal";
+import { AuditDrawer, buildAuditEntries } from "@/components/drawer/AuditDrawer";
+import { WORKERS, formatNaira } from "@/lib/sentinel-data";
+import type { Worker } from "@/types";
+import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
+
+type Phase = "empty" | "processing" | "results";
+
+export default function Page() {
+  const [phase, setPhase] = useState<Phase>("empty");
+  const [selected, setSelected] = useState<Worker | null>(null);
+  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
+  const [payOpen, setPayOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<ReturnType<typeof buildAuditEntries>>([]);
+
+  const totalWorkers = WORKERS.length;
+  const flagged = WORKERS.filter((w) => w.status !== "verified").length;
+  const totalPayroll = WORKERS.reduce((s, w) => s + w.salary, 0);
+
+  const effective = useMemo(
+    () =>
+      WORKERS.map((w) => {
+        const d = decided.get(w.id);
+        if (d === "approve") return { ...w, status: "verified" as const };
+        if (d === "block") return { ...w, status: "blocked" as const };
+        return w;
+      }),
+    [decided],
+  );
+
+  const verified = effective.filter((w) => w.status === "verified");
+  const heldList = effective.filter((w) => w.status === "review");
+  const blockedList = effective.filter((w) => w.status === "blocked");
+  const payrollReady = verified.reduce((s, w) => s + w.salary, 0);
+
+  const handleAction = (id: string, action: "approve" | "block") => {
+    setDecided((prev) => {
+      const n = new Map(prev);
+      n.set(id, action);
+      return n;
+    });
+    setSelected((prev) =>
+      prev ? { ...prev, status: action === "approve" ? "verified" : "blocked" } : prev,
+    );
+  };
+
+  const completePayment = () => {
+    setAuditEntries(buildAuditEntries(verified, heldList, blockedList));
+  };
+
+  return (
+    <div className="min-h-screen">
+      <Sidebar onAuditClick={() => setAuditOpen(true)} />
+
+      <main className="md:pl-[72px] pb-20 md:pb-0">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8">
+          <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 md:mb-10">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="font-display font-bold text-xl md:text-2xl tracking-[0.04em] text-text-primary">
+                SENTINEL
+              </h1>
+              <span
+                className="px-2.5 py-1 rounded-full text-[10px] font-mono text-primary"
+                style={{
+                  background: "rgba(0,229,160,0.08)",
+                  border: "1px solid rgba(0,229,160,0.2)",
+                }}
+              >
+                {APP_VERSION}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-text-secondary text-sm flex-wrap">
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-primary"
+                  style={{ boxShadow: "0 0 8px #00E5A0" }}
+                />
+                <span className="text-mono text-xs">SYSTEM ONLINE</span>
+              </div>
+              <div className="text-mono text-xs text-text-tertiary hidden sm:block">
+                {OFFICE_LOCATION}
+              </div>
+            </div>
+          </header>
+
+          {phase === "empty" && (
+            <div className="text-center mb-10">
+              <p className="text-text-secondary text-sm">
+                AI-Powered Payroll Integrity for the Public Sector
+              </p>
+            </div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {phase === "empty" && (
+              <motion.div key="empty" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <UploadZone onUpload={() => setPhase("processing")} />
+              </motion.div>
+            )}
+            {phase === "processing" && (
+              <motion.div key="processing" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <ProcessingView total={1200} onDone={() => setPhase("results")} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div
+            className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 ${phase === "results" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+          >
+            <StatCard
+              label="Total Workers"
+              value={phase === "empty" ? null : totalWorkers}
+              icon={<Users className="w-4 h-4" />}
+              delay={0}
+            />
+            <StatCard
+              label="Flagged Workers"
+              value={phase === "empty" ? null : flagged}
+              tone="danger"
+              icon={<AlertTriangle className="w-4 h-4" />}
+              delay={0.08}
+            />
+            <StatCard
+              label="Total Payroll"
+              value={phase === "empty" ? null : totalPayroll}
+              format={formatNaira}
+              icon={<Banknote className="w-4 h-4" />}
+              delay={0.16}
+            />
+            {phase === "results" && (
+              <StatCard
+                label="Payroll Ready"
+                value={payrollReady}
+                format={formatNaira}
+                tone="primary"
+                icon={<ShieldCheck className="w-4 h-4" />}
+                delay={0.24}
+              />
+            )}
+          </div>
+
+          {phase === "results" && (
+            <ResultsTable
+              workers={effective}
+              reviewedIds={new Set(decided.keys())}
+              onSelect={setSelected}
+              onProcess={() => setPayOpen(true)}
+            />
+          )}
+
+          <footer className="mt-16 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-text-tertiary text-xs">
+            <span className="text-mono">SENTINEL · STATE PAYROLL INTEGRITY ENGINE</span>
+            <span>Encrypted · Auditable · Immutable</span>
+          </footer>
+        </div>
+      </main>
+
+      <WorkerDrawer
+        worker={selected}
+        onClose={() => setSelected(null)}
+        onAction={handleAction}
+        decided={decided}
+      />
+      <PaymentModal
+        open={payOpen}
+        workers={effective}
+        toPay={verified}
+        held={heldList}
+        blocked={blockedList}
+        onClose={() => setPayOpen(false)}
+        onComplete={completePayment}
+        onViewAudit={() => setAuditOpen(true)}
+      />
+      <AuditDrawer open={auditOpen} entries={auditEntries} onClose={() => setAuditOpen(false)} />
+    </div>
+  );
+}
