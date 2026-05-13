@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { Users, AlertTriangle, Banknote, ShieldCheck } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -12,8 +13,11 @@ import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
 import { AuditDrawer, buildAuditEntries } from "@/components/drawer/AuditDrawer";
 import { WORKERS, formatNaira } from "@/lib/sentinel-data";
+import { uploadPayroll, fetchWorkers } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
+
+const API_ENABLED = !!process.env.NEXT_PUBLIC_API_URL;
 
 type Phase = "empty" | "processing" | "results";
 
@@ -25,25 +29,64 @@ export default function Page() {
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditEntries, setAuditEntries] = useState<ReturnType<typeof buildAuditEntries>>([]);
 
-  const totalWorkers = WORKERS.length;
-  const flagged = WORKERS.filter((w) => w.status !== "verified").length;
-  const totalPayroll = WORKERS.reduce((s, w) => s + w.salary, 0);
+  const [liveWorkers, setLiveWorkers] = useState<Worker[] | null>(null);
+  const [rowCount, setRowCount] = useState(1200);
+  const [animDone, setAnimDone] = useState(false);
+  const [apiFetched, setApiFetched] = useState(false);
+
+  useEffect(() => {
+    if (phase === "processing" && animDone && (apiFetched || !API_ENABLED)) {
+      setPhase("results");
+    }
+  }, [animDone, apiFetched, phase]);
+
+  const workersBase = liveWorkers ?? WORKERS;
+
+  const totalWorkers = workersBase.length;
+  const flagged = workersBase.filter((w) => w.status !== "verified").length;
+  const totalPayroll = workersBase.reduce((s, w) => s + w.salary, 0);
 
   const effective = useMemo(
     () =>
-      WORKERS.map((w) => {
+      workersBase.map((w) => {
         const d = decided.get(w.id);
         if (d === "approve") return { ...w, status: "verified" as const };
         if (d === "block") return { ...w, status: "blocked" as const };
         return w;
       }),
-    [decided],
+    [workersBase, decided],
   );
 
   const verified = effective.filter((w) => w.status === "verified");
   const heldList = effective.filter((w) => w.status === "review");
   const blockedList = effective.filter((w) => w.status === "blocked");
   const payrollReady = verified.reduce((s, w) => s + w.salary, 0);
+
+  async function handleUpload(file: File) {
+    setPhase("processing");
+    setAnimDone(false);
+    setApiFetched(false);
+    setLiveWorkers(null);
+    setDecided(new Map());
+
+    if (!API_ENABLED) {
+      setApiFetched(true);
+      return;
+    }
+
+    try {
+      const { upload_id, row_count } = await uploadPayroll(file);
+      setRowCount(row_count);
+      const workers = await fetchWorkers(upload_id);
+      setLiveWorkers(workers);
+      setApiFetched(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      setPhase("empty");
+      setAnimDone(false);
+      setApiFetched(false);
+    }
+  }
 
   const handleAction = (id: string, action: "approve" | "block") => {
     setDecided((prev) => {
@@ -112,12 +155,12 @@ export default function Page() {
           <AnimatePresence mode="wait">
             {phase === "empty" && (
               <motion.div key="empty" exit={{ opacity: 0, y: -10 }} className="mb-8">
-                <UploadZone onUpload={() => setPhase("processing")} />
+                <UploadZone onUpload={handleUpload} />
               </motion.div>
             )}
             {phase === "processing" && (
               <motion.div key="processing" exit={{ opacity: 0, y: -10 }} className="mb-8">
-                <ProcessingView total={1200} onDone={() => setPhase("results")} />
+                <ProcessingView total={rowCount} onDone={() => setAnimDone(true)} />
               </motion.div>
             )}
           </AnimatePresence>

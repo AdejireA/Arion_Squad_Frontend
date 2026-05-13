@@ -26,7 +26,7 @@ function validate(file: File): string | null {
   return null;
 }
 
-export function UploadZone({ onUpload }: { onUpload: () => void }) {
+export function UploadZone({ onUpload }: { onUpload: (file: File) => void }) {
   const [drag, setDrag] = useState(false);
   const [picked, setPicked] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export function UploadZone({ onUpload }: { onUpload: () => void }) {
                   </button>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onUpload(); }}
+                  onClick={(e) => { e.stopPropagation(); onUpload(picked); }}
                   className="h-11 px-8 rounded-lg text-sm font-medium text-[#06080F] glow-teal"
                   style={{ background: "linear-gradient(135deg,#00E5A0,#00b87f)" }}
                 >
