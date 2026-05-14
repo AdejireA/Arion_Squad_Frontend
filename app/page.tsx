@@ -13,7 +13,7 @@ import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
 import { AuditDrawer } from "@/components/drawer/AuditDrawer";
 import { formatNaira, departmentAverages } from "@/lib/sentinel-data";
-import { uploadPayroll, fetchWorkers } from "@/lib/api";
+import { uploadPayroll, fetchWorkers, patchWorkerStatus } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
 
@@ -91,6 +91,8 @@ export default function Page() {
     setSelected((prev) =>
       prev ? { ...prev, status: action === "approve" ? "verified" : "blocked" } : prev,
     );
+    patchWorkerStatus(id, action === "approve" ? "verified" : "blocked")
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Override failed"));
   };
 
   return (

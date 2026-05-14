@@ -24,13 +24,11 @@ function eventDisplay(event: string): { label: string; color: string; pillLabel:
   }
 }
 
-function extractAmount(detail: string): number | null {
-  try {
-    const parsed = JSON.parse(detail) as Record<string, unknown>;
-    return typeof parsed.amount === "number" ? parsed.amount : null;
-  } catch {
-    return null;
-  }
+function extractAmount(detail: Record<string, unknown>): number | null {
+  if (typeof detail?.amount === "number") return detail.amount;
+  const resp = detail?.squad_response as Record<string, unknown> | undefined;
+  if (typeof resp?.amount === "number") return resp.amount;
+  return null;
 }
 
 export function AuditDrawer({
@@ -72,7 +70,7 @@ export function AuditDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed right-0 top-0 h-screen w-[640px] z-50 overflow-y-auto"
+            className="fixed right-0 top-0 h-screen w-full sm:w-[640px] z-50 overflow-y-auto"
             style={{
               background: "rgba(13,17,23,0.94)",
               backdropFilter: "blur(32px)",

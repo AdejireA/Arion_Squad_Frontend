@@ -1,4 +1,4 @@
-import type { Worker, WorkerOut, AuditEvent } from "@/types";
+import type { Worker, WorkerOut, AuditEvent, Status } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -26,20 +26,12 @@ export interface ProcessPayrollResponse {
 // ── Reason-code helpers ───────────────────────────────────────────────────────
 
 const CODE_LABELS: Record<string, string> = {
-  duplicate_bvn: "Duplicate BVN Detected",
-  ghost_worker: "Ghost Worker Pattern Match",
-  ghost_worker_pattern: "Ghost Worker Pattern Match",
-  duplicate_account: "Duplicate Account Number",
-  duplicate_account_number: "Duplicate Account Number",
-  no_attendance: "No Attendance — 3+ Months",
-  no_attendance_3months: "No Attendance — 3+ Months",
-  salary_exceeds_grade: "Salary Exceeds Grade Level",
-  salary_exceeds_grade_level: "Salary Exceeds Grade Level",
-  irregular_attendance: "Irregular Attendance Pattern",
-  address_mismatch: "Address Mismatch on File",
-  missing_tax_id: "Missing Tax ID",
-  recent_bank_change: "Recent Bank Account Change",
-  recent_bank_account_change: "Recent Bank Account Change",
+  DUPLICATE_BANK_ACCOUNT: "Duplicate Bank Account",
+  DUPLICATE_BVN: "Duplicate BVN Detected",
+  MISSING_BVN: "Missing BVN on File",
+  SALARY_FAR_ABOVE_GRADE_PEERS: "Salary Exceeds Grade Level",
+  SALARY_FAR_BELOW_GRADE_PEERS: "Salary Below Grade Level",
+  SUSPICIOUS_NAME: "Suspicious Name Pattern",
 };
 
 function humanizeCode(code: string): string {
@@ -49,6 +41,12 @@ function humanizeCode(code: string): string {
 
 // ── Mapping ───────────────────────────────────────────────────────────────────
 
+function normalizeStatus(s: WorkerOut["status"]): Status {
+  if (s === "paid" || s === "pending") return "verified";
+  if (s === "failed") return "blocked";
+  return s as Status;
+}
+
 export function mapWorker(raw: WorkerOut): Worker {
   const severity = raw.trust_score < 50 ? "high" : "medium";
   return {
@@ -57,7 +55,7 @@ export function mapWorker(raw: WorkerOut): Worker {
     department: raw.department ?? raw.grade,
     salary: raw.salary,
     score: raw.trust_score,
-    status: raw.status === "pending" ? "review" : raw.status,
+    status: normalizeStatus(raw.status),
     reasons: raw.reason_codes.map((code) => ({
       label: humanizeCode(code),
       severity,
@@ -103,6 +101,21 @@ export async function processPayroll(uploadId: string): Promise<ProcessPayrollRe
   return res.json() as Promise<ProcessPayrollResponse>;
 }
 
+export async function patchWorkerStatus(
+  id: string,
+  status: "verified" | "blocked",
+): Promise<void> {
+  const res = await fetch(`${BASE}/workers/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => res.statusText);
+    throw new Error(`Override failed (${res.status}): ${detail}`);
+  }
+}
+
 export async function fetchAuditLog(uploadId: string): Promise<AuditEvent[]> {
   const url = `${BASE}/audit-log?upload_id=${encodeURIComponent(uploadId)}`;
   const res = await fetch(url);
@@ -110,5 +123,6 @@ export async function fetchAuditLog(uploadId: string): Promise<AuditEvent[]> {
     const detail = await res.text().catch(() => res.statusText);
     throw new Error(`Failed to fetch audit log (${res.status}): ${detail}`);
   }
-  return res.json() as Promise<AuditEvent[]>;
+  const data = (await res.json()) as { upload_id: string; events: AuditEvent[] };
+  return data.events;
 }

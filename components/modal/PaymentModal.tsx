@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Worker } from "@/types";
@@ -29,16 +29,20 @@ export function PaymentModal({
 }: Props) {
   const [stage, setStage] = useState<"confirm" | "paying" | "done">("confirm");
   const [payResult, setPayResult] = useState<ProcessPayrollResponse | null>(null);
+  const fired = useRef(false);
 
   useEffect(() => {
     if (!open) {
       setStage("confirm");
       setPayResult(null);
+      fired.current = false;
     }
   }, [open]);
 
   useEffect(() => {
     if (stage !== "paying") return;
+    if (fired.current) return;
+    fired.current = true;
     processPayroll(uploadId)
       .then((result) => {
         setPayResult(result);

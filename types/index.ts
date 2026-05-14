@@ -10,7 +10,7 @@ export interface WorkerOut {
   grade: string;
   department?: string;
   trust_score: number;
-  status: "verified" | "blocked" | "pending";
+  status: "verified" | "review" | "blocked" | "pending" | "paid" | "failed";
   reason_codes: string[];
 }
 
@@ -33,6 +33,6 @@ export interface AuditEvent {
   upload_id: string;
   worker_id: string;
   event: string;
-  detail: string;
+  detail: Record<string, unknown>;
   created_at: string;
 }
