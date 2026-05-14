@@ -17,6 +17,7 @@ AI-powered payroll fraud detection dashboard for state government HR officers. D
 | Icons | [Lucide React](https://lucide.dev) |
 | Forms | React Hook Form + Zod |
 | Fonts | Space Grotesk · Inter · JetBrains Mono (Google Fonts) |
+| Notifications | [Sonner](https://sonner.emilkowal.ski) (toast) |
 
 ---
 
@@ -43,7 +44,8 @@ sentinel-frontend/
 │   └── use-mobile.tsx        # Responsive breakpoint hook
 ├── lib/
 │   ├── utils.ts              # cn() Tailwind class utility
-│   └── sentinel-data.ts      # Dummy worker data + formatNaira helper
+│   ├── api.ts                # API client (uploadPayroll, fetchWorkers, field mapping)
+│   └── sentinel-data.ts      # Fallback dummy workers + formatNaira helper
 ├── types/
 │   └── index.ts              # Worker, Status types
 ├── constants/
@@ -109,48 +111,64 @@ cp .env.example .env.local
 
 ## Connecting to the Backend API
 
-The app currently uses hardcoded dummy data in [lib/sentinel-data.ts](lib/sentinel-data.ts). To connect to the real backend:
+Set `NEXT_PUBLIC_API_URL` in `.env.local` to enable live data. Without it the app falls back to the dummy workers in [lib/sentinel-data.ts](lib/sentinel-data.ts).
 
-1. Set `NEXT_PUBLIC_API_URL` in your `.env.local`:
-   ```
-   NEXT_PUBLIC_API_URL=https://api.sentinel.yourdomain.com
-   ```
-
-2. Replace the `WORKERS` constant in [lib/sentinel-data.ts](lib/sentinel-data.ts) with a TanStack Query fetch:
-   ```ts
-   // lib/api.ts
-   export async function fetchPayrollRun(runId: string) {
-     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payroll/${runId}/workers`);
-     if (!res.ok) throw new Error("Failed to fetch payroll run");
-     return res.json() as Promise<Worker[]>;
-   }
-   ```
-
-3. Use it in [app/page.tsx](app/page.tsx) with `useQuery`:
-   ```ts
-   const { data: workers } = useQuery({
-     queryKey: ["payroll", runId],
-     queryFn: () => fetchPayrollRun(runId),
-   });
-   ```
-
-### Expected API Response Shape
-
-```json
-[
-  {
-    "id": "OG-10428",
-    "name": "Adebayo Oladele",
-    "department": "Health",
-    "salary": 185000,
-    "score": 96,
-    "status": "verified",
-    "reasons": []
-  }
-]
+```
+NEXT_PUBLIC_API_URL=https://api.sentinel.yourdomain.com
 ```
 
-The full type definition is in [types/index.ts](types/index.ts).
+All API logic lives in [lib/api.ts](lib/api.ts).
+
+### Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/upload` | Upload a payroll CSV/XLSX file |
+| `GET` | `/workers?upload_id=<id>` | Fetch scored workers for an upload |
+
+### Upload request
+
+`multipart/form-data` with a single field `file`.
+
+### Upload response
+
+```json
+{ "upload_id": "abc123", "row_count": 1200, "scored": 1195, "blocked": 3 }
+```
+
+### Workers response
+
+```json
+{
+  "upload_id": "abc123",
+  "workers": [
+    {
+      "id": "OG-10428",
+      "upload_id": "abc123",
+      "full_name": "Adebayo Oladele",
+      "bank_account": "0123456789",
+      "bank_code": "058",
+      "salary": 185000,
+      "grade": "Health",
+      "trust_score": 96,
+      "status": "verified",
+      "reason_codes": []
+    }
+  ]
+}
+```
+
+### Field mapping (backend → frontend)
+
+| Backend | Frontend | Notes |
+|---|---|---|
+| `full_name` | `name` | |
+| `trust_score` | `score` | |
+| `grade` | `department` | |
+| `"pending"` | `"review"` | status normalisation |
+| `reason_codes[]` | `reasons[{label, severity}]` | humanised in `lib/api.ts` |
+
+The full type definitions are in [types/index.ts](types/index.ts).
 
 ---
 

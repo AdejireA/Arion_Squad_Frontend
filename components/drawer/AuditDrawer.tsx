@@ -1,78 +1,61 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
-import type { Worker } from "@/types";
+import { X, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { AuditEvent } from "@/types";
+import { fetchAuditLog } from "@/lib/api";
 import { formatNaira } from "@/lib/sentinel-data";
 
-interface Entry {
-  ts: string;
-  action: string;
-  workerId: string;
-  workerName: string;
-  amount: number;
-  status: "paid" | "held" | "blocked" | "approved" | "blocked-manual";
+function eventDisplay(event: string): { label: string; color: string; pillLabel: string } {
+  if (event.startsWith("WEBHOOK_")) {
+    return { label: "Payment Confirmed", color: "#00E5A0", pillLabel: "Confirmed" };
+  }
+  switch (event) {
+    case "TRANSFER_INITIATED":
+      return { label: "Payment Initiated", color: "#00E5A0", pillLabel: "Initiated" };
+    case "PAYMENT_BLOCKED":
+      return { label: "Blocked", color: "#FF4C6E", pillLabel: "Blocked" };
+    case "TRANSFER_FAILED":
+      return { label: "Failed", color: "#FFB628", pillLabel: "Failed" };
+    default:
+      return { label: event, color: "#8892a4", pillLabel: event };
+  }
 }
 
-export function buildAuditEntries(
-  paid: Worker[],
-  held: Worker[],
-  blocked: Worker[],
-): Entry[] {
-  const now = new Date();
-  const fmt = (d: Date) => d.toISOString().replace("T", " ").slice(0, 19);
-  let i = 0;
-  const out: Entry[] = [];
-  paid.forEach((w) =>
-    out.push({
-      ts: fmt(new Date(now.getTime() - (paid.length - i++) * 1500)),
-      action: "Payment Disbursed",
-      workerId: w.id,
-      workerName: w.name,
-      amount: w.salary,
-      status: "paid",
-    }),
-  );
-  held.forEach((w) =>
-    out.push({
-      ts: fmt(new Date(now.getTime() - 60_000 - i++ * 800)),
-      action: "Held for Review",
-      workerId: w.id,
-      workerName: w.name,
-      amount: w.salary,
-      status: "held",
-    }),
-  );
-  blocked.forEach((w) =>
-    out.push({
-      ts: fmt(new Date(now.getTime() - 90_000 - i++ * 800)),
-      action: "Payment Blocked",
-      workerId: w.id,
-      workerName: w.name,
-      amount: w.salary,
-      status: "blocked",
-    }),
-  );
-  return out;
+function extractAmount(detail: string): number | null {
+  try {
+    const parsed = JSON.parse(detail) as Record<string, unknown>;
+    return typeof parsed.amount === "number" ? parsed.amount : null;
+  } catch {
+    return null;
+  }
 }
-
-const pillStyle: Record<Entry["status"], { c: string; l: string }> = {
-  paid: { c: "#00E5A0", l: "Paid" },
-  held: { c: "#FFB628", l: "Held" },
-  blocked: { c: "#FF4C6E", l: "Blocked" },
-  approved: { c: "#00E5A0", l: "Approved" },
-  "blocked-manual": { c: "#FF4C6E", l: "Manual Block" },
-};
 
 export function AuditDrawer({
   open,
-  entries,
+  uploadId,
   onClose,
 }: {
   open: boolean;
-  entries: Entry[];
+  uploadId: string;
   onClose: () => void;
 }) {
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !uploadId) return;
+    setLoading(true);
+    fetchAuditLog(uploadId)
+      .then(setEvents)
+      .catch((err) =>
+        toast.error(err instanceof Error ? err.message : "Failed to load audit log"),
+      )
+      .finally(() => setLoading(false));
+  }, [open, uploadId]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -115,7 +98,12 @@ export function AuditDrawer({
                 Chronological record of all payroll decisions made by Sentinel.
               </p>
 
-              {entries.length === 0 ? (
+              {loading ? (
+                <div className="glass p-8 flex items-center justify-center gap-3 text-text-tertiary text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading audit log...
+                </div>
+              ) : events.length === 0 ? (
                 <div className="glass p-8 text-center text-text-tertiary text-sm">
                   No audit entries yet. Run a payroll to generate records.
                 </div>
@@ -126,43 +114,41 @@ export function AuditDrawer({
                       <tr className="text-[10px] uppercase tracking-[0.14em] text-text-tertiary text-left">
                         <th className="px-4 py-3 font-medium">Timestamp</th>
                         <th className="py-3 font-medium">Action</th>
-                        <th className="py-3 font-medium">Worker</th>
+                        <th className="py-3 font-medium">Worker ID</th>
                         <th className="py-3 font-medium text-right">Amount</th>
                         <th className="py-3 pr-4 font-medium">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {entries.map((e, i) => {
-                        const p = pillStyle[e.status];
+                      {events.map((e) => {
+                        const d = eventDisplay(e.event);
+                        const amount = extractAmount(e.detail);
                         return (
-                          <tr key={i} className="border-t border-white/[0.04]">
+                          <tr key={e.id} className="border-t border-white/[0.04]">
                             <td className="px-4 py-3 text-mono text-[11px] text-text-secondary">
-                              {e.ts}
+                              {e.created_at.replace("T", " ").slice(0, 19)}
                             </td>
-                            <td className="py-3 text-text-primary text-xs">{e.action}</td>
-                            <td className="py-3 text-text-secondary text-xs">
-                              <div>{e.workerName}</div>
-                              <div className="text-mono text-text-tertiary text-[10px]">
-                                {e.workerId}
-                              </div>
+                            <td className="py-3 text-text-primary text-xs">{d.label}</td>
+                            <td className="py-3 text-mono text-[10px] text-text-tertiary">
+                              {e.worker_id.slice(0, 12)}
                             </td>
                             <td className="py-3 text-right text-mono text-xs text-text-primary">
-                              {formatNaira(e.amount)}
+                              {amount !== null ? formatNaira(amount) : "—"}
                             </td>
                             <td className="py-3 pr-4">
                               <span
                                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider"
                                 style={{
-                                  background: `${p.c}15`,
-                                  color: p.c,
-                                  border: `1px solid ${p.c}40`,
+                                  background: `${d.color}15`,
+                                  color: d.color,
+                                  border: `1px solid ${d.color}40`,
                                 }}
                               >
                                 <span
                                   className="w-1 h-1 rounded-full"
-                                  style={{ background: p.c }}
+                                  style={{ background: d.color }}
                                 />
-                                {p.l}
+                                {d.pillLabel}
                               </span>
                             </td>
                           </tr>

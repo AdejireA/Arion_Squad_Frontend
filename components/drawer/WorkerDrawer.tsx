@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, ShieldAlert } from "lucide-react";
 import type { Worker } from "@/types";
-import { departmentAverages, formatNaira } from "@/lib/sentinel-data";
+import { formatNaira } from "@/lib/sentinel-data";
 
 function Gauge({ score, status }: { score: number; status: Worker["status"] }) {
   const color =
@@ -57,11 +57,13 @@ export function WorkerDrawer({
   onClose,
   onAction,
   decided,
+  averages,
 }: {
   worker: Worker | null;
   onClose: () => void;
   onAction: (id: string, action: "approve" | "block") => void;
   decided: Map<string, "approve" | "block">;
+  averages: Record<string, { salary: number; score: number }>;
 }) {
   return (
     <AnimatePresence>
@@ -156,13 +158,13 @@ export function WorkerDrawer({
                 <Compare
                   label="Monthly Salary"
                   value={worker.salary}
-                  avg={departmentAverages[worker.department].salary}
+                  avg={averages[worker.department]?.salary ?? 0}
                   format={formatNaira}
                 />
                 <Compare
                   label="Trust Score"
                   value={worker.score}
-                  avg={departmentAverages[worker.department].score}
+                  avg={averages[worker.department]?.score ?? 0}
                   format={(n) => String(n)}
                 />
               </div>

@@ -2,55 +2,57 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { Worker } from "@/types";
+import { processPayroll, type ProcessPayrollResponse } from "@/lib/api";
 import { formatNaira } from "@/lib/sentinel-data";
-import { PAYMENT_STEP_DELAY_MS } from "@/constants";
 
 interface Props {
   open: boolean;
-  workers: Worker[];
+  uploadId: string;
   toPay: Worker[];
   held: Worker[];
   blocked: Worker[];
   onClose: () => void;
-  onComplete: () => void;
   onViewAudit: () => void;
 }
 
 export function PaymentModal({
   open,
+  uploadId,
   toPay,
   held,
   blocked,
   onClose,
-  onComplete,
   onViewAudit,
 }: Props) {
   const [stage, setStage] = useState<"confirm" | "paying" | "done">("confirm");
-  const [paidIdx, setPaidIdx] = useState(0);
+  const [payResult, setPayResult] = useState<ProcessPayrollResponse | null>(null);
 
   useEffect(() => {
     if (!open) {
       setStage("confirm");
-      setPaidIdx(0);
+      setPayResult(null);
     }
   }, [open]);
 
   useEffect(() => {
     if (stage !== "paying") return;
-    if (paidIdx >= toPay.length) {
-      setTimeout(() => setStage("done"), 600);
-      return;
-    }
-    const t = setTimeout(() => setPaidIdx((i) => i + 1), PAYMENT_STEP_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [stage, paidIdx, toPay.length]);
+    processPayroll(uploadId)
+      .then((result) => {
+        setPayResult(result);
+        setStage("done");
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : "Payment processing failed.");
+        setStage("confirm");
+      });
+  }, [stage, uploadId]);
 
   const total = toPay.reduce((s, w) => s + w.salary, 0);
   const heldTotal = held.reduce((s, w) => s + w.salary, 0);
   const blockedTotal = blocked.reduce((s, w) => s + w.salary, 0);
-  const pct = toPay.length ? (paidIdx / toPay.length) * 100 : 100;
 
   return (
     <AnimatePresence>
@@ -113,46 +115,27 @@ export function PaymentModal({
             )}
 
             {stage === "paying" && (
-              <div className="p-7 flex flex-col min-h-0">
-                <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary mb-2">
+              <div className="p-10 flex flex-col items-center">
+                <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary mb-8">
                   Disbursing Payments
                 </div>
-                <div className="flex items-baseline gap-3 mb-5">
-                  <div className="text-mono text-3xl text-primary text-glow-teal">{paidIdx}</div>
-                  <div className="text-text-tertiary text-mono">/ {toPay.length} workers</div>
+                <Loader2 className="w-10 h-10 text-primary animate-spin mb-6" />
+                <div className="text-text-secondary text-sm mb-8">
+                  Processing {toPay.length} payments...
                 </div>
                 <div
-                  className="h-1.5 rounded-full overflow-hidden mb-5"
+                  className="w-full h-1.5 rounded-full overflow-hidden"
                   style={{ background: "rgba(255,255,255,0.05)" }}
                 >
-                  <div
-                    className="h-full rounded-full transition-[width] duration-200"
+                  <motion.div
+                    className="h-full rounded-full"
                     style={{
-                      width: `${pct}%`,
                       background: "linear-gradient(90deg,#00b87f,#00E5A0)",
                       boxShadow: "0 0 12px rgba(0,229,160,0.6)",
                     }}
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
                   />
-                </div>
-                <div
-                  className="flex-1 overflow-y-auto space-y-1.5 text-sm pr-2"
-                  style={{ maxHeight: 280 }}
-                >
-                  {toPay.slice(0, paidIdx).reverse().map((w) => (
-                    <motion.div
-                      key={w.id}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-3 p-2.5 rounded-lg"
-                      style={{ background: "rgba(0,229,160,0.04)" }}
-                    >
-                      <Check className="w-4 h-4 text-primary shrink-0" />
-                      <span className="text-text-primary text-sm">Paying {w.name}</span>
-                      <span className="ml-auto text-mono text-text-secondary text-xs">
-                        {formatNaira(w.salary)}
-                      </span>
-                    </motion.div>
-                  ))}
                 </div>
               </div>
             )}
@@ -174,26 +157,31 @@ export function PaymentModal({
                 </motion.div>
                 <h2 className="text-2xl text-text-primary mb-2">Payroll Complete</h2>
                 <p className="text-text-secondary text-sm mb-6">
-                  {toPay.length} workers paid · {formatNaira(total)} disbursed
+                  {payResult?.succeeded ?? toPay.length} workers paid · {formatNaira(total)}{" "}
+                  disbursed
                 </p>
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                  <MiniStat label="Paid" value={toPay.length} color="#00E5A0" />
-                  <MiniStat label="Held" value={held.length} color="#FFB628" />
-                  <MiniStat label="Blocked" value={blocked.length} color="#FF4C6E" />
+                  <MiniStat
+                    label="Paid"
+                    value={payResult?.succeeded ?? toPay.length}
+                    color="#00E5A0"
+                  />
+                  <MiniStat label="Failed" value={payResult?.failed ?? 0} color="#FFB628" />
+                  <MiniStat
+                    label="Blocked"
+                    value={payResult?.blocked ?? blocked.length}
+                    color="#FF4C6E"
+                  />
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      onComplete();
-                      onClose();
-                    }}
+                    onClick={onClose}
                     className="flex-1 h-11 rounded-lg text-sm text-text-secondary hover:bg-white/5"
                   >
                     Close
                   </button>
                   <button
                     onClick={() => {
-                      onComplete();
                       onViewAudit();
                       onClose();
                     }}

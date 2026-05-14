@@ -11,50 +11,47 @@ import { ProcessingView } from "@/components/processing/ProcessingView";
 import { ResultsTable } from "@/components/table/ResultsTable";
 import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
-import { AuditDrawer, buildAuditEntries } from "@/components/drawer/AuditDrawer";
-import { WORKERS, formatNaira } from "@/lib/sentinel-data";
+import { AuditDrawer } from "@/components/drawer/AuditDrawer";
+import { formatNaira, departmentAverages } from "@/lib/sentinel-data";
 import { uploadPayroll, fetchWorkers } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
-
-const API_ENABLED = !!process.env.NEXT_PUBLIC_API_URL;
 
 type Phase = "empty" | "processing" | "results";
 
 export default function Page() {
   const [phase, setPhase] = useState<Phase>("empty");
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [uploadId, setUploadId] = useState("");
+  const [rowCount, setRowCount] = useState(1200);
+  const [animDone, setAnimDone] = useState(false);
+  const [apiFetched, setApiFetched] = useState(false);
   const [selected, setSelected] = useState<Worker | null>(null);
   const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
   const [payOpen, setPayOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
-  const [auditEntries, setAuditEntries] = useState<ReturnType<typeof buildAuditEntries>>([]);
-
-  const [liveWorkers, setLiveWorkers] = useState<Worker[] | null>(null);
-  const [rowCount, setRowCount] = useState(1200);
-  const [animDone, setAnimDone] = useState(false);
-  const [apiFetched, setApiFetched] = useState(false);
 
   useEffect(() => {
-    if (phase === "processing" && animDone && (apiFetched || !API_ENABLED)) {
+    if (phase === "processing" && animDone && apiFetched) {
       setPhase("results");
     }
   }, [animDone, apiFetched, phase]);
 
-  const workersBase = liveWorkers ?? WORKERS;
+  const averages = useMemo(() => departmentAverages(workers), [workers]);
 
-  const totalWorkers = workersBase.length;
-  const flagged = workersBase.filter((w) => w.status !== "verified").length;
-  const totalPayroll = workersBase.reduce((s, w) => s + w.salary, 0);
+  const totalWorkers = workers.length;
+  const flagged = workers.filter((w) => w.status !== "verified").length;
+  const totalPayroll = workers.reduce((s, w) => s + w.salary, 0);
 
   const effective = useMemo(
     () =>
-      workersBase.map((w) => {
+      workers.map((w) => {
         const d = decided.get(w.id);
         if (d === "approve") return { ...w, status: "verified" as const };
         if (d === "block") return { ...w, status: "blocked" as const };
         return w;
       }),
-    [workersBase, decided],
+    [workers, decided],
   );
 
   const verified = effective.filter((w) => w.status === "verified");
@@ -66,19 +63,15 @@ export default function Page() {
     setPhase("processing");
     setAnimDone(false);
     setApiFetched(false);
-    setLiveWorkers(null);
+    setWorkers([]);
     setDecided(new Map());
-
-    if (!API_ENABLED) {
-      setApiFetched(true);
-      return;
-    }
 
     try {
       const { upload_id, row_count } = await uploadPayroll(file);
+      setUploadId(upload_id);
       setRowCount(row_count);
-      const workers = await fetchWorkers(upload_id);
-      setLiveWorkers(workers);
+      const fetched = await fetchWorkers(upload_id);
+      setWorkers(fetched);
       setApiFetched(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
@@ -97,10 +90,6 @@ export default function Page() {
     setSelected((prev) =>
       prev ? { ...prev, status: action === "approve" ? "verified" : "blocked" } : prev,
     );
-  };
-
-  const completePayment = () => {
-    setAuditEntries(buildAuditEntries(verified, heldList, blockedList));
   };
 
   return (
@@ -221,18 +210,18 @@ export default function Page() {
         onClose={() => setSelected(null)}
         onAction={handleAction}
         decided={decided}
+        averages={averages}
       />
       <PaymentModal
         open={payOpen}
-        workers={effective}
+        uploadId={uploadId}
         toPay={verified}
         held={heldList}
         blocked={blockedList}
         onClose={() => setPayOpen(false)}
-        onComplete={completePayment}
         onViewAudit={() => setAuditOpen(true)}
       />
-      <AuditDrawer open={auditOpen} entries={auditEntries} onClose={() => setAuditOpen(false)} />
+      <AuditDrawer open={auditOpen} uploadId={uploadId} onClose={() => setAuditOpen(false)} />
     </div>
   );
 }

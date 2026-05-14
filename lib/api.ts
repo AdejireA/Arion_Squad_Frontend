@@ -1,4 +1,4 @@
-import type { Worker, WorkerOut } from "@/types";
+import type { Worker, WorkerOut, AuditEvent } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -14,6 +14,13 @@ export interface UploadResponse {
 interface WorkersResponse {
   upload_id: string;
   workers: WorkerOut[];
+}
+
+export interface ProcessPayrollResponse {
+  attempted: number;
+  succeeded: number;
+  failed: number;
+  blocked: number;
 }
 
 // ── Reason-code helpers ───────────────────────────────────────────────────────
@@ -35,38 +42,25 @@ const CODE_LABELS: Record<string, string> = {
   recent_bank_account_change: "Recent Bank Account Change",
 };
 
-const HIGH_SEVERITY_CODES = new Set([
-  "duplicate_bvn",
-  "ghost_worker",
-  "ghost_worker_pattern",
-  "duplicate_account",
-  "duplicate_account_number",
-  "no_attendance",
-  "no_attendance_3months",
-]);
-
 function humanizeCode(code: string): string {
   const key = code.toLowerCase();
   return CODE_LABELS[key] ?? code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function codeSeverity(code: string): "high" | "medium" {
-  return HIGH_SEVERITY_CODES.has(code.toLowerCase()) ? "high" : "medium";
-}
-
 // ── Mapping ───────────────────────────────────────────────────────────────────
 
 export function mapWorker(raw: WorkerOut): Worker {
+  const severity = raw.trust_score < 50 ? "high" : "medium";
   return {
     id: raw.id,
     name: raw.full_name,
-    department: raw.grade,
+    department: raw.department ?? raw.grade,
     salary: raw.salary,
     score: raw.trust_score,
     status: raw.status === "pending" ? "review" : raw.status,
     reasons: raw.reason_codes.map((code) => ({
       label: humanizeCode(code),
-      severity: codeSeverity(code),
+      severity,
     })),
   };
 }
@@ -94,4 +88,27 @@ export async function fetchWorkers(uploadId: string): Promise<Worker[]> {
   }
   const data = (await res.json()) as WorkersResponse;
   return data.workers.map(mapWorker);
+}
+
+export async function processPayroll(uploadId: string): Promise<ProcessPayrollResponse> {
+  const res = await fetch(`${BASE}/payroll/process`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ upload_id: uploadId }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => res.statusText);
+    throw new Error(`Payment processing failed (${res.status}): ${detail}`);
+  }
+  return res.json() as Promise<ProcessPayrollResponse>;
+}
+
+export async function fetchAuditLog(uploadId: string): Promise<AuditEvent[]> {
+  const url = `${BASE}/audit-log?upload_id=${encodeURIComponent(uploadId)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => res.statusText);
+    throw new Error(`Failed to fetch audit log (${res.status}): ${detail}`);
+  }
+  return res.json() as Promise<AuditEvent[]>;
 }

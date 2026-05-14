@@ -1,6 +1,4 @@
 // ── Backend (FastAPI) response shape ─────────────────────────────────────────
-// Mapping: full_name → name, trust_score → score, grade → department,
-//          "pending" → "review", reason_codes[] → reasons[{label, severity}]
 
 export interface WorkerOut {
   id: string;
@@ -10,12 +8,13 @@ export interface WorkerOut {
   bank_code: string;
   salary: number;
   grade: string;
+  department?: string;
   trust_score: number;
   status: "verified" | "blocked" | "pending";
   reason_codes: string[];
 }
 
-// ── Frontend domain type ──────────────────────────────────────────────────────
+// ── Frontend domain types ─────────────────────────────────────────────────────
 
 export type Status = "verified" | "review" | "blocked";
 
@@ -27,4 +26,13 @@ export interface Worker {
   score: number;
   status: Status;
   reasons: { label: string; severity: "high" | "medium" }[];
+}
+
+export interface AuditEvent {
+  id: string;
+  upload_id: string;
+  worker_id: string;
+  event: string;
+  detail: string;
+  created_at: string;
 }
