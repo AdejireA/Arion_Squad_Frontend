@@ -59,17 +59,18 @@ export default function Page() {
   const blockedList = effective.filter((w) => w.status === "blocked");
   const payrollReady = verified.reduce((s, w) => s + w.salary, 0);
 
-  async function handleUpload(file: File) {
+  async function handleUpload(file: File, clientRowCount: number) {
     setPhase("processing");
     setAnimDone(false);
     setApiFetched(false);
     setWorkers([]);
     setDecided(new Map());
+    setRowCount(clientRowCount || 1200);
 
     try {
       const { upload_id, row_count } = await uploadPayroll(file);
       setUploadId(upload_id);
-      setRowCount(row_count);
+      setRowCount(row_count || clientRowCount || 1200);
       const fetched = await fetchWorkers(upload_id);
       setWorkers(fetched);
       setApiFetched(true);

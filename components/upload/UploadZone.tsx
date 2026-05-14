@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { useRef, useState } from "react";
+import Papa from "papaparse";
 import { MAX_UPLOAD_SIZE_MB, ACCEPTED_FILE_TYPES } from "@/constants";
 
 const ACCEPTED_MIME = ["text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"];
@@ -26,9 +27,10 @@ function validate(file: File): string | null {
   return null;
 }
 
-export function UploadZone({ onUpload }: { onUpload: (file: File) => void }) {
+export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: number) => void }) {
   const [drag, setDrag] = useState(false);
   const [picked, setPicked] = useState<File | null>(null);
+  const [rowCount, setRowCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +43,20 @@ export function UploadZone({ onUpload }: { onUpload: (file: File) => void }) {
     }
     setError(null);
     setPicked(file);
+
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (ext === ".csv") {
+      Papa.parse(file, {
+        skipEmptyLines: true,
+        complete: (results) => {
+          const dataRows = results.data.length > 0 ? results.data.length - 1 : 0;
+          setRowCount(Math.max(0, dataRows));
+        },
+        error: () => setRowCount(0),
+      });
+    } else {
+      setRowCount(0);
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -113,7 +129,7 @@ export function UploadZone({ onUpload }: { onUpload: (file: File) => void }) {
                   </button>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onUpload(picked); }}
+                  onClick={(e) => { e.stopPropagation(); onUpload(picked, rowCount); }}
                   className="h-11 px-8 rounded-lg text-sm font-medium text-[#06080F] glow-teal"
                   style={{ background: "linear-gradient(135deg,#00E5A0,#00b87f)" }}
                 >
