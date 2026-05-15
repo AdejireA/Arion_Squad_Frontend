@@ -42,7 +42,9 @@ export function StatCard({
         </span>
         {icon && <div className="text-text-tertiary">{icon}</div>}
       </div>
-      <div className={`text-mono text-4xl font-medium ${value === null ? "text-text-tertiary" : color}`}>
+      <div className={`text-mono font-medium ${value === null ? "text-text-tertiary" : color} ${
+        String(format(animated ?? 0)).length > 10 ? "text-2xl" : "text-4xl"
+      }`}>
         {value === null ? "—" : format(animated)}
       </div>
     </motion.div>

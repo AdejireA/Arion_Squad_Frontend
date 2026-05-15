@@ -108,6 +108,38 @@ export function WorkerDrawer({
 
               <div className="glass p-6 mb-6">
                 <Gauge score={worker.score} status={worker.status} />
+                {worker.reasons.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-xs uppercase tracking-widest text-text-tertiary mb-3">
+                      Score Drivers
+                    </p>
+                    <div className="space-y-2">
+                      {worker.reasons.map((r, i) => {
+                        const weight = Math.round(100 / worker.reasons.length);
+                        const color = r.severity === "high" ? "#FF4C6E" : "#FFB628";
+                        return (
+                          <div key={r.label} className="flex items-center gap-3">
+                            <span className="text-xs text-text-secondary w-40 truncate">
+                              {r.label}
+                            </span>
+                            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${weight}%` }}
+                                transition={{ duration: 0.6, delay: i * 0.1 }}
+                                className="h-full rounded-full"
+                                style={{ background: color }}
+                              />
+                            </div>
+                            <span className="text-xs text-mono text-text-tertiary w-8 text-right">
+                              {weight}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mb-6">

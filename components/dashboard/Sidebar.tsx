@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { LayoutDashboard, Upload, ShieldCheck, FileClock, Settings } from "lucide-react";
 
 const items = [
@@ -12,8 +13,23 @@ const items = [
   { icon: Settings, label: "Settings" },
 ];
 
-export function Sidebar({ onAuditClick }: { onAuditClick: () => void }) {
+export function Sidebar({
+  onAuditClick,
+  onUploadClick,
+}: {
+  onAuditClick: () => void;
+  onUploadClick: () => void;
+}) {
   const [open, setOpen] = useState(false);
+
+  function handleNav(label: string) {
+    if (label === "Dashboard") window.scrollTo({ top: 0, behavior: "smooth" });
+    else if (label === "Uploads") onUploadClick();
+    else if (label === "Verifications")
+      document.querySelector("[data-section='results']")?.scrollIntoView({ behavior: "smooth" });
+    else if (label === "Audit Log") onAuditClick();
+    else if (label === "Settings") toast.info("Settings coming in v2");
+  }
   return (
     <>
       {/* Desktop / tablet sidebar */}
@@ -46,7 +62,7 @@ export function Sidebar({ onAuditClick }: { onAuditClick: () => void }) {
           {items.map((it, i) => (
             <button
               key={it.label}
-              onClick={() => it.label === "Audit Log" && onAuditClick()}
+              onClick={() => handleNav(it.label)}
               className="w-full flex items-center h-11 px-3 rounded-lg hover:bg-white/5 transition-colors text-text-secondary hover:text-text-primary group"
             >
               <it.icon className="w-5 h-5 shrink-0" strokeWidth={1.75} />
@@ -73,7 +89,7 @@ export function Sidebar({ onAuditClick }: { onAuditClick: () => void }) {
         {items.map((it, i) => (
           <button
             key={it.label}
-            onClick={() => it.label === "Audit Log" && onAuditClick()}
+            onClick={() => handleNav(it.label)}
             className={`flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-md transition-colors ${i === 0 ? "text-primary" : "text-text-secondary"}`}
           >
             <it.icon className="w-5 h-5" strokeWidth={1.75} />

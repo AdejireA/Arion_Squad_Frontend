@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, AlertTriangle, Banknote, ShieldCheck } from "lucide-react";
+import { Users, AlertTriangle, Banknote, ShieldCheck, ShieldOff } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -58,6 +58,7 @@ export default function Page() {
   const heldList = effective.filter((w) => w.status === "review");
   const blockedList = effective.filter((w) => w.status === "blocked");
   const payrollReady = verified.reduce((s, w) => s + w.salary, 0);
+  const amountProtected = blockedList.reduce((s, w) => s + w.salary, 0);
 
   async function handleUpload(file: File, clientRowCount: number) {
     setPhase("processing");
@@ -97,7 +98,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <Sidebar onAuditClick={() => setAuditOpen(true)} />
+      <Sidebar onAuditClick={() => setAuditOpen(true)} onUploadClick={() => setPhase("empty")} />
 
       <main className="md:pl-[72px] pb-20 md:pb-0">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8">
@@ -158,7 +159,7 @@ export default function Page() {
           </AnimatePresence>
 
           <div
-            className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 ${phase === "results" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+            className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${phase === "results" ? "xl:grid-cols-5" : ""}`}
           >
             <StatCard
               label="Total Workers"
@@ -190,8 +191,19 @@ export default function Page() {
                 delay={0.24}
               />
             )}
+            {phase === "results" && (
+              <StatCard
+                label="Amount Protected"
+                value={amountProtected}
+                format={formatNaira}
+                tone="danger"
+                icon={<ShieldOff className="w-4 h-4" />}
+                delay={0.32}
+              />
+            )}
           </div>
 
+          <div data-section="results" />
           {phase === "results" && (
             <ResultsTable
               workers={effective}

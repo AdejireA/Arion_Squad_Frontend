@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(node -e \"const p=require\\('./node_modules/next/package.json'\\); console.log\\(p.version\\)\")"
+      "Bash(node -e \"const p=require\\('./node_modules/next/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(ls \"c:\\\\Users\\\\AdejireA\\\\Desktop\\\\Arion_Squad\\\\\")",
+      "Read(//c/Users/AdejireA/Desktop/**)",
+      "Bash(ls /mnt/c/Users/AdejireA/Desktop/Arion_Squad/)",
+      "Read(//mnt/c/Users/AdejireA/Desktop/**)"
     ]
   }
 }
