@@ -116,19 +116,18 @@ export function WorkerDrawer({
                     <div className="space-y-2">
                       {worker.reasons.map((r, i) => {
                         const weight = Math.round(100 / worker.reasons.length);
-                        const color = r.severity === "high" ? "#FF4C6E" : "#FFB628";
                         return (
-                          <div key={r.label} className="flex items-center gap-3">
-                            <span className="text-xs text-text-secondary w-40 truncate">
+                          <div key={i} className="flex items-center gap-3">
+                            <span className="text-xs text-text-secondary w-44 truncate">
                               {r.label}
                             </span>
-                            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                            <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${weight}%` }}
-                                transition={{ duration: 0.6, delay: i * 0.1 }}
+                                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
                                 className="h-full rounded-full"
-                                style={{ background: color }}
+                                style={{ background: r.severity === "high" ? "#FF4C6E" : "#EF9F27" }}
                               />
                             </div>
                             <span className="text-xs text-mono text-text-tertiary w-8 text-right">

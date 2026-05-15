@@ -32,11 +32,13 @@ const CODE_LABELS: Record<string, string> = {
   SALARY_FAR_ABOVE_GRADE_PEERS: "Salary Exceeds Grade Level",
   SALARY_FAR_BELOW_GRADE_PEERS: "Salary Below Grade Level",
   SUSPICIOUS_NAME: "Suspicious Name Pattern",
+  NEAR_DUPLICATE_NAME: "Near-Duplicate Name Detected",
+  LOW_ATTENDANCE: "Below Attendance Threshold",
+  SQUAD_NAME_MISMATCH: "Bank Account Name Mismatch",
 };
 
 function humanizeCode(code: string): string {
-  const key = code.toLowerCase();
-  return CODE_LABELS[key] ?? code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return CODE_LABELS[code] ?? code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ── Mapping ───────────────────────────────────────────────────────────────────
