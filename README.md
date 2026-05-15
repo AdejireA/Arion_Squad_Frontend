@@ -44,8 +44,8 @@ sentinel-frontend/
 │   └── use-mobile.tsx        # Responsive breakpoint hook
 ├── lib/
 │   ├── utils.ts              # cn() Tailwind class utility
-│   ├── api.ts                # API client (uploadPayroll, fetchWorkers, field mapping)
-│   └── sentinel-data.ts      # Fallback dummy workers + formatNaira helper
+│   ├── api.ts                # API client — upload, workers, payment, audit, overrides
+│   └── sentinel-data.ts      # formatNaira + departmentAverages helpers
 ├── types/
 │   └── index.ts              # Worker, Status types
 ├── constants/
@@ -104,20 +104,20 @@ cp .env.example .env.local
 
 | Variable | Description | Required |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | Base URL of the Sentinel backend API | Yes |
+| `NEXT_PUBLIC_API_URL` | Base URL of the Sentinel backend API | **Yes** — all data comes from the API |
 | `NEXT_PUBLIC_APP_ENV` | `development` \| `staging` \| `production` | No |
 
 ---
 
 ## Connecting to the Backend API
 
-Set `NEXT_PUBLIC_API_URL` in `.env.local` to enable live data. Without it the app falls back to the dummy workers in [lib/sentinel-data.ts](lib/sentinel-data.ts).
+Set `NEXT_PUBLIC_API_URL` in `.env.local`:
 
 ```
 NEXT_PUBLIC_API_URL=https://api.sentinel.yourdomain.com
 ```
 
-All API logic lives in [lib/api.ts](lib/api.ts).
+All API logic lives in [lib/api.ts](lib/api.ts). The app has no offline/dummy-data fallback — all features require a running backend.
 
 ### Endpoints
 
@@ -125,6 +125,9 @@ All API logic lives in [lib/api.ts](lib/api.ts).
 |---|---|---|
 | `POST` | `/upload` | Upload a payroll CSV/XLSX file |
 | `GET` | `/workers?upload_id=<id>` | Fetch scored workers for an upload |
+| `PATCH` | `/workers/{id}` | Override a worker's status (`verified` or `blocked`) |
+| `POST` | `/payroll/process` | Disburse verified workers — body: `{ upload_id }` |
+| `GET` | `/audit-log?upload_id=<id>` | Fetch the immutable audit log for an upload |
 
 ### Upload request
 
@@ -165,7 +168,8 @@ All API logic lives in [lib/api.ts](lib/api.ts).
 | `full_name` | `name` | |
 | `trust_score` | `score` | |
 | `grade` | `department` | |
-| `"pending"` | `"review"` | status normalisation |
+| `"paid"` / `"pending"` | `"verified"` | post-payment normalisation |
+| `"failed"` | `"blocked"` | post-payment normalisation |
 | `reason_codes[]` | `reasons[{label, severity}]` | humanised in `lib/api.ts` |
 
 The full type definitions are in [types/index.ts](types/index.ts).
