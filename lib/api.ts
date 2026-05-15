@@ -1,6 +1,11 @@
 import type { Worker, WorkerOut, AuditEvent, Status } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return { "X-API-Key": API_KEY, ...extra };
+}
 
 // ── Raw response shapes ───────────────────────────────────────────────────────
 
@@ -34,7 +39,7 @@ const CODE_LABELS: Record<string, string> = {
   SUSPICIOUS_NAME: "Suspicious Name Pattern",
   NEAR_DUPLICATE_NAME: "Near-Duplicate Name Detected",
   LOW_ATTENDANCE: "Below Attendance Threshold",
-  SQUAD_NAME_MISMATCH: "Bank Account Name Mismatch",
+  NAME_MISMATCH_WITH_BANK: "Bank Account Name Mismatch",
 };
 
 function humanizeCode(code: string): string {
@@ -71,7 +76,7 @@ export async function uploadPayroll(file: File): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(`${BASE}/upload`, { method: "POST", body: form });
+  const res = await fetch(`${BASE}/upload`, { method: "POST", headers: authHeaders(), body: form });
   if (!res.ok) {
     const detail = await res.text().catch(() => res.statusText);
     throw new Error(`Upload failed (${res.status}): ${detail}`);
@@ -81,7 +86,7 @@ export async function uploadPayroll(file: File): Promise<UploadResponse> {
 
 export async function fetchWorkers(uploadId: string): Promise<Worker[]> {
   const url = `${BASE}/workers?upload_id=${encodeURIComponent(uploadId)}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: authHeaders() });
   if (!res.ok) {
     const detail = await res.text().catch(() => res.statusText);
     throw new Error(`Failed to fetch workers (${res.status}): ${detail}`);
@@ -93,7 +98,7 @@ export async function fetchWorkers(uploadId: string): Promise<Worker[]> {
 export async function processPayroll(uploadId: string): Promise<ProcessPayrollResponse> {
   const res = await fetch(`${BASE}/payroll/process`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ upload_id: uploadId }),
   });
   if (!res.ok) {
@@ -109,7 +114,7 @@ export async function patchWorkerStatus(
 ): Promise<void> {
   const res = await fetch(`${BASE}/workers/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ status }),
   });
   if (!res.ok) {
@@ -120,7 +125,7 @@ export async function patchWorkerStatus(
 
 export async function fetchAuditLog(uploadId: string): Promise<AuditEvent[]> {
   const url = `${BASE}/audit-log?upload_id=${encodeURIComponent(uploadId)}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: authHeaders() });
   if (!res.ok) {
     const detail = await res.text().catch(() => res.statusText);
     throw new Error(`Failed to fetch audit log (${res.status}): ${detail}`);
