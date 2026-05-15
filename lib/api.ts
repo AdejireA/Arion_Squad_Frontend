@@ -40,6 +40,7 @@ const CODE_LABELS: Record<string, string> = {
   NEAR_DUPLICATE_NAME: "Near-Duplicate Name Detected",
   LOW_ATTENDANCE: "Below Attendance Threshold",
   NAME_MISMATCH_WITH_BANK: "Bank Account Name Mismatch",
+  ACCOUNT_NOT_FOUND_IN_BANK: "Account Not Found in Bank",
 };
 
 function humanizeCode(code: string): string {
