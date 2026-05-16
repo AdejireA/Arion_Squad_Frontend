@@ -15,12 +15,13 @@ import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
 import { AuditDrawer } from "@/components/drawer/AuditDrawer";
 import { UploadHistory } from "@/components/dashboard/UploadHistory";
+import { PayrollView } from "@/components/payroll/PayrollView";
 import { formatNaira, departmentAverages } from "@/lib/sentinel-data";
 import { uploadPayroll, fetchWorkers, patchWorkerStatus } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
 
-type Phase = "dashboard" | "empty" | "processing" | "results";
+type Phase = "dashboard" | "empty" | "processing" | "results" | "payroll";
 
 const SESSION_KEY = "sentinel_session";
 
@@ -160,13 +161,14 @@ export default function Page() {
       <Sidebar
         onAuditClick={() => setAuditOpen(true)}
         onUploadClick={() => setPhase("empty")}
-        onHistoryClick={() => setHistoryOpen(true)}
+        onHistoryClick={() => setPhase("payroll")}
         onDashboardClick={() => setPhase("dashboard")}
         onVerificationsClick={() => setPhase(hasData ? "results" : "empty")}
         activeLabel={
-          phase === "dashboard" ? "Dashboard"
-          : phase === "empty" ? "Uploads"
+          phase === "dashboard"  ? "Dashboard"
+          : phase === "empty"   ? "Uploads"
           : phase === "processing" ? "Uploads"
+          : phase === "payroll" ? "History"
           : "Verifications"
         }
       />
@@ -203,6 +205,16 @@ export default function Page() {
                 />
               </motion.div>
             )}
+            {phase === "payroll" && (
+              <motion.div key="payroll" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <PayrollView
+                  workers={effective}
+                  uploadId={uploadId}
+                  onProcessPayroll={() => setPayOpen(true)}
+                  onNewUpload={() => setPhase("empty")}
+                />
+              </motion.div>
+            )}
             {phase === "empty" && (
               <motion.div key="empty" exit={{ opacity: 0, y: -10 }} className="mb-8">
                 <div className="text-center mb-8">
@@ -220,7 +232,7 @@ export default function Page() {
             )}
           </AnimatePresence>
 
-          {phase !== "dashboard" && (
+          {phase !== "dashboard" && phase !== "payroll" && (
             <>
               <div
                 className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${hasData ? "xl:grid-cols-5" : ""}`}
@@ -272,7 +284,7 @@ export default function Page() {
           )}
 
           <div data-section="results" />
-          {hasData && phase !== "dashboard" && (
+          {hasData && phase !== "dashboard" && phase !== "payroll" && (
             <ResultsTable
               workers={effective}
               reviewedIds={new Set(decided.keys())}
