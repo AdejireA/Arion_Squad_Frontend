@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { fetchUploadHistory, type UploadHistoryItem } from "@/lib/api";
 
 function formatDate(iso: string): string {
@@ -32,7 +31,7 @@ export function UploadHistory({
     setLoading(true);
     fetchUploadHistory()
       .then(setItems)
-      .catch((err) => toast.error(err instanceof Error ? err.message : "Failed to load history"))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [open]);
 

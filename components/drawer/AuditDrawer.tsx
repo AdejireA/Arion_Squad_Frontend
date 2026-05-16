@@ -48,9 +48,7 @@ export function AuditDrawer({
     setLoading(true);
     fetchAuditLog(uploadId)
       .then(setEvents)
-      .catch((err) =>
-        toast.error(err instanceof Error ? err.message : "Failed to load audit log"),
-      )
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Failed to load audit log"))
       .finally(() => setLoading(false));
   }, [open, uploadId]);
 

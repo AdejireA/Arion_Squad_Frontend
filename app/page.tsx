@@ -42,23 +42,29 @@ function loadSession() {
 }
 
 export default function Page() {
-  const [phase, setPhase] = useState<Phase>(() => loadSession()?.phase ?? "dashboard");
-  const [workers, setWorkers] = useState<Worker[]>(() => loadSession()?.workers ?? []);
-  const [uploadId, setUploadId] = useState<string>(() => loadSession()?.uploadId ?? "");
-  const [rowCount, setRowCount] = useState<number>(() => loadSession()?.rowCount ?? 1200);
+  // Always start with server-safe defaults to avoid SSR/client hydration mismatch.
+  // sessionStorage is read in a useEffect after mount.
+  const [phase, setPhase] = useState<Phase>("dashboard");
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [uploadId, setUploadId] = useState<string>("");
+  const [rowCount, setRowCount] = useState<number>(1200);
   const [animDone, setAnimDone] = useState(false);
   const [apiFetched, setApiFetched] = useState(false);
   const [selected, setSelected] = useState<Worker | null>(null);
-  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(
-    () => loadSession()?.decided ?? new Map(),
-  );
+  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
   const [payOpen, setPayOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // If we restored a "processing" session we can't resume — jump straight to results
+  // Restore persisted session after mount (runs only on client)
   useEffect(() => {
-    if (phase === "processing" && workers.length > 0) setPhase("results");
+    const saved = loadSession();
+    if (!saved) return;
+    setPhase(saved.phase === "processing" ? "results" : saved.phase);
+    setWorkers(saved.workers);
+    setUploadId(saved.uploadId);
+    setRowCount(saved.rowCount);
+    setDecided(saved.decided);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -155,7 +161,8 @@ export default function Page() {
         onAuditClick={() => setAuditOpen(true)}
         onUploadClick={() => setPhase("empty")}
         onHistoryClick={() => setHistoryOpen(true)}
-        onDashboardClick={() => setPhase(hasData ? "results" : "dashboard")}
+        onDashboardClick={() => setPhase("dashboard")}
+        onVerificationsClick={() => setPhase(hasData ? "results" : "empty")}
         activeLabel={
           phase === "dashboard" ? "Dashboard"
           : phase === "empty" ? "Uploads"
