@@ -105,14 +105,14 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
       {/* toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 sm:p-5 border-b border-white/5">
         <div
-          className="flex items-center gap-1 p-1 rounded-lg overflow-x-auto"
-          style={{ background: "rgba(0,0,0,0.3)" }}
+          className="flex items-center gap-2 p-1 rounded-2xl overflow-x-auto"
+          style={{ background: "rgba(255,255,255,0.04)" }}
         >
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-3.5 h-8 rounded-md text-xs font-medium flex items-center gap-2 whitespace-nowrap transition-colors ${tab === t.key ? "bg-white/8 text-text-primary" : "text-text-secondary hover:text-text-primary"}`}
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition ${tab === t.key ? "bg-white/10 text-text-primary" : "text-text-secondary hover:text-text-primary"}`}
             >
               {t.dot && <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />}
               {t.label}
@@ -126,10 +126,10 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by name, ID, department"
-            className="w-full h-10 pl-10 pr-4 rounded-lg text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:ring-1 focus:ring-primary/40"
+            className="w-full h-10 pl-10 pr-4 rounded-2xl text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:ring-2 focus:ring-primary/20"
             style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
             }}
           />
         </div>
@@ -137,13 +137,13 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
           <button
             disabled={!canProcess}
             onClick={onProcess}
-            className={`h-10 px-5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition w-full lg:w-auto ${canProcess ? "text-primary glow-teal" : "text-text-tertiary cursor-not-allowed"}`}
+            className={`h-10 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold transition w-full lg:w-auto ${canProcess ? "text-primary" : "text-text-tertiary cursor-not-allowed"}`}
             style={{
-              background: canProcess ? "rgba(0,229,160,0.08)" : "rgba(255,255,255,0.02)",
-              border: `1px solid ${canProcess ? "rgba(0,229,160,0.4)" : "rgba(255,255,255,0.06)"}`,
+              background: canProcess ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${canProcess ? "rgba(0,229,160,0.22)" : "rgba(255,255,255,0.08)"}`,
             }}
           >
-            Process Payroll <ArrowRight className="w-4 h-4" />
+            Process payroll <ArrowRight className="w-4 h-4" />
           </button>
           {!canProcess && (
             <div className="absolute right-0 top-full mt-2 w-64 p-3 glass-strong text-xs text-text-secondary opacity-0 group-hover:opacity-100 pointer-events-none transition z-10">
