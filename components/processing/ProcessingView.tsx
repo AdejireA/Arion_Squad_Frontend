@@ -42,62 +42,62 @@ export function ProcessingView({ total, onDone }: { total: number; onDone: () =>
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="glass p-8 relative overflow-hidden"
+      className="glass p-8 relative overflow-hidden bg-slate-50/80 border border-slate-200"
     >
       <div className="flex items-center gap-3 mb-6">
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center"
-          style={{ background: "rgba(0,229,160,0.12)" }}
+          style={{ background: "rgba(255,106,0,0.12)" }}
         >
           <Cpu className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <div className="text-xs uppercase tracking-[0.18em] text-text-tertiary">
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
             AI Engine Active
           </div>
-          <div className="text-text-primary font-display text-lg font-semibold">
+          <div className="text-slate-950 font-display text-lg font-semibold">
             Sentinel Risk Model {RISK_MODEL_VERSION}
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white/5 border border-white/10 p-5 mb-8">
-        <div className="text-xs uppercase tracking-[0.16em] text-text-tertiary mb-3">
+      <div className="rounded-3xl bg-white shadow-sm border border-slate-200 p-5 mb-8">
+        <div className="text-xs uppercase tracking-[0.16em] text-slate-500 mb-3">
           Scoring payroll entries
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-sm text-text-secondary">Active sample stream</div>
-            <div className="mt-3 text-sm text-text-primary leading-6">
+            <div className="text-sm text-slate-600">Active sample stream</div>
+            <div className="mt-3 text-sm text-slate-950 leading-6">
               Processing the latest payroll upload and evaluating entries against fraud risk patterns.
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase tracking-[0.16em] text-text-tertiary">
+            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
               Estimated throughput
             </div>
-            <div className="text-2xl font-semibold text-text-primary">{total.toLocaleString()}</div>
+            <div className="text-2xl font-semibold text-slate-950">{total.toLocaleString()}</div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 mb-3 text-sm text-text-tertiary">
+      <div className="flex items-center justify-between gap-4 mb-3 text-sm text-slate-500">
         <div>
           <div className="uppercase tracking-[0.16em]">Scored</div>
-          <div className="text-text-primary text-2xl font-semibold mt-1">
+          <div className="text-slate-950 text-2xl font-semibold mt-1">
             <span>{count.toLocaleString()}</span>
-            <span className="text-text-tertiary ml-2">/ {total.toLocaleString()}</span>
+            <span className="text-slate-500 ml-2">/ {total.toLocaleString()}</span>
           </div>
         </div>
-        <div className="font-medium text-text-primary">{pct.toFixed(1)}%</div>
+        <div className="font-medium text-slate-950">{pct.toFixed(1)}%</div>
       </div>
 
-      <div className="h-3 rounded-full overflow-hidden bg-white/10">
+      <div className="h-3 rounded-full overflow-hidden bg-slate-200">
         <div
           className="h-full rounded-full transition-all duration-300"
           style={{
             width: `${pct}%`,
-            background: "linear-gradient(90deg, #00B87F, #00E5A0)",
+            background: "linear-gradient(90deg, #FF6A00, #FFC58F)",
           }}
         />
       </div>

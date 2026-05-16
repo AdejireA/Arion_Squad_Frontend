@@ -45,74 +45,106 @@ export function UploadHistory({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-slate-900/20 z-40"
           />
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed right-0 top-0 h-screen w-full sm:w-[480px] z-50 overflow-y-auto"
+            className="fixed right-0 top-0 h-screen w-full sm:w-[520px] z-50 overflow-y-auto"
             style={{
-              background: "rgba(13,17,23,0.94)",
-              backdropFilter: "blur(32px)",
-              borderLeft: "1px solid rgba(255,255,255,0.06)",
+              background: "#FFFFFF",
+              borderLeft: "1px solid rgba(255,106,0,0.18)",
+              boxShadow: "-28px 0 70px rgba(255,106,0,0.12)",
             }}
           >
             <div className="p-7">
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary">
-                    Past Uploads
+                  <div className="text-xs uppercase tracking-[0.14em] text-slate-500 font-semibold">
+                    Upload history
                   </div>
-                  <h2 className="text-2xl text-text-primary mt-1">Upload History</h2>
+                  <h2 className="text-3xl font-display font-semibold text-slate-950 mt-2">
+                    Payroll uploads
+                  </h2>
+                  <p className="text-slate-600 text-sm mt-3 max-w-xl">
+                    Review recent payroll uploads, row counts, and timestamps with clean card summaries.
+                  </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-white/5 text-text-secondary"
+                  className="h-11 w-11 rounded-2xl flex items-center justify-center transition hover:bg-slate-100 text-slate-700"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-text-secondary text-sm mt-2 mb-6">
-                All payroll files processed by Sentinel.
-              </p>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="rounded-3xl bg-white border border-primary/20 p-4 shadow-sm">
+                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500 font-medium">
+                    Total uploads
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold text-slate-950">
+                    {items.length.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-3xl bg-white border border-primary/20 p-4 shadow-sm">
+                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500 font-medium">
+                    Latest upload
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold text-slate-950">
+                    {items[0]?.row_count.toLocaleString() ?? "—"}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">workers</div>
+                </div>
+              </div>
 
               {loading ? (
-                <div className="glass p-8 text-center text-text-tertiary text-sm">
+                <div className="glass p-8 text-center text-slate-500 text-sm bg-primary/10 border border-primary/20">
                   Loading history...
                 </div>
               ) : items.length === 0 ? (
-                <div className="glass p-8 text-center text-text-tertiary text-sm">
+                <div className="glass p-8 text-center text-slate-500 text-sm bg-primary/10 border border-primary/20">
                   No uploads found.
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-4 p-4 rounded-xl"
-                      style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.04)",
-                      }}
+                      className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"
                     >
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: "rgba(0,229,160,0.08)" }}
-                      >
-                        <FileText className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-text-primary font-medium truncate">
-                          {item.filename}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-950 truncate">
+                            {item.filename}
+                          </div>
+                          <div className="mt-2 text-xs text-slate-500 text-mono tracking-[0.08em]">
+                            {item.row_count.toLocaleString()} workers processed
+                          </div>
                         </div>
-                        <div className="text-xs text-text-tertiary text-mono mt-0.5">
-                          {item.row_count.toLocaleString()} workers
-                        </div>
+                        <span className="inline-flex items-center rounded-full bg-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary">
+                          Completed
+                        </span>
                       </div>
-                      <div className="text-xs text-text-tertiary text-mono text-right shrink-0">
-                        {formatDate(item.created_at)}
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm text-slate-600">
+                        <div className="rounded-2xl bg-primary/10 p-3 border border-primary/20">
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                            Upload date
+                          </div>
+                          <div className="mt-2 text-slate-950 text-mono">
+                            {formatDate(item.created_at)}
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-primary/10 p-3 border border-primary/20">
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                            File name
+                          </div>
+                          <div className="mt-2 text-slate-950 text-mono truncate">
+                            {item.filename}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DepartmentSummary } from "@/components/dashboard/DepartmentSummary";
+import { DashboardHome } from "@/components/dashboard/DashboardHome";
 import { ProcessingView } from "@/components/processing/ProcessingView";
 import { ResultsTable } from "@/components/table/ResultsTable";
 import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
@@ -19,26 +20,72 @@ import { uploadPayroll, fetchWorkers, patchWorkerStatus } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
 
-type Phase = "empty" | "processing" | "results";
+type Phase = "dashboard" | "empty" | "processing" | "results";
+
+const SESSION_KEY = "sentinel_session";
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return {
+      phase: parsed.phase as Phase,
+      workers: parsed.workers as Worker[],
+      uploadId: parsed.uploadId as string,
+      rowCount: parsed.rowCount as number,
+      decided: new Map<string, "approve" | "block">(parsed.decided ?? []),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default function Page() {
-  const [phase, setPhase] = useState<Phase>("empty");
-  const [workers, setWorkers] = useState<Worker[]>([]);
-  const [uploadId, setUploadId] = useState("");
-  const [rowCount, setRowCount] = useState(1200);
+  const [phase, setPhase] = useState<Phase>(() => loadSession()?.phase ?? "dashboard");
+  const [workers, setWorkers] = useState<Worker[]>(() => loadSession()?.workers ?? []);
+  const [uploadId, setUploadId] = useState<string>(() => loadSession()?.uploadId ?? "");
+  const [rowCount, setRowCount] = useState<number>(() => loadSession()?.rowCount ?? 1200);
   const [animDone, setAnimDone] = useState(false);
   const [apiFetched, setApiFetched] = useState(false);
   const [selected, setSelected] = useState<Worker | null>(null);
-  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
+  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(
+    () => loadSession()?.decided ?? new Map(),
+  );
   const [payOpen, setPayOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  // If we restored a "processing" session we can't resume — jump straight to results
+  useEffect(() => {
+    if (phase === "processing" && workers.length > 0) setPhase("results");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (phase === "processing" && animDone && apiFetched) {
       setPhase("results");
     }
   }, [animDone, apiFetched, phase]);
+
+  // Persist session whenever we have worker data; normalize "processing" → "results"
+  useEffect(() => {
+    if (workers.length === 0) return;
+    try {
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          phase: phase === "processing" ? "results" : phase,
+          workers,
+          uploadId,
+          rowCount,
+          decided: Array.from(decided.entries()),
+        }),
+      );
+    } catch {
+      // sessionStorage quota exceeded — silently skip
+    }
+  }, [phase, workers, uploadId, rowCount, decided]);
 
   const averages = useMemo(() => departmentAverages(workers), [workers]);
 
@@ -57,6 +104,8 @@ export default function Page() {
     [workers, decided],
   );
 
+  const hasData = workers.length > 0;
+
   const verified = effective.filter((w) => w.status === "verified");
   const heldList = effective.filter((w) => w.status === "review");
   const blockedList = effective.filter((w) => w.status === "blocked");
@@ -64,6 +113,7 @@ export default function Page() {
   const amountProtected = blockedList.reduce((s, w) => s + w.salary, 0);
 
   async function handleUpload(file: File, clientRowCount: number) {
+    sessionStorage.removeItem(SESSION_KEY);
     setPhase("processing");
     setAnimDone(false);
     setApiFetched(false);
@@ -100,42 +150,34 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       <Sidebar
         onAuditClick={() => setAuditOpen(true)}
         onUploadClick={() => setPhase("empty")}
         onHistoryClick={() => setHistoryOpen(true)}
+        onDashboardClick={() => setPhase(hasData ? "results" : "dashboard")}
+        activeLabel={
+          phase === "dashboard" ? "Dashboard"
+          : phase === "empty" ? "Uploads"
+          : phase === "processing" ? "Uploads"
+          : "Verifications"
+        }
       />
 
       <main className="md:pl-[72px] pb-20 md:pb-0">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8">
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 md:mb-10">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="font-display font-bold text-xl md:text-2xl tracking-[0.04em] text-text-primary">
+              <h1 className="font-display font-bold text-2xl tracking-[0.04em] text-text-primary">
                 SENTINEL
               </h1>
-              <span
-                className="px-2.5 py-1 rounded-full text-[10px] font-mono text-primary"
-                style={{
-                  background: "rgba(0,229,160,0.08)",
-                  border: "1px solid rgba(0,229,160,0.2)",
-                }}
-              >
+              <span className="px-3 py-1 rounded-full text-[10px] font-mono text-secondary bg-secondary/10 border border-secondary/20">
                 {APP_VERSION}
               </span>
             </div>
             <div className="flex items-center gap-3 text-text-secondary text-sm flex-wrap">
-              <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-primary"
-                  style={{ boxShadow: "0 0 8px #00E5A0" }}
-                />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/15 text-secondary">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
                 <span className="text-mono text-xs">SYSTEM ONLINE</span>
               </div>
               <div className="text-mono text-xs text-text-tertiary hidden sm:block">
@@ -144,17 +186,23 @@ export default function Page() {
             </div>
           </header>
 
-          {phase === "empty" && (
-            <div className="text-center mb-10">
-              <p className="text-text-secondary text-sm">
-                AI-Powered Payroll Integrity for the Public Sector
-              </p>
-            </div>
-          )}
-
           <AnimatePresence mode="wait">
+            {phase === "dashboard" && (
+              <motion.div key="dashboard" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <DashboardHome
+                  onNewUpload={() => setPhase("empty")}
+                  onViewResults={() => setPhase("results")}
+                  hasResults={hasData}
+                />
+              </motion.div>
+            )}
             {phase === "empty" && (
               <motion.div key="empty" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <div className="text-center mb-8">
+                  <p className="text-text-secondary text-sm">
+                    AI-Powered Payroll Integrity for the Public Sector
+                  </p>
+                </div>
                 <UploadZone onUpload={handleUpload} />
               </motion.div>
             )}
@@ -165,55 +213,59 @@ export default function Page() {
             )}
           </AnimatePresence>
 
-          <div
-            className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${phase === "results" ? "xl:grid-cols-5" : ""}`}
-          >
-            <StatCard
-              label="Total Workers"
-              value={phase === "empty" ? null : totalWorkers}
-              icon={<Users className="w-4 h-4" />}
-              delay={0}
-            />
-            <StatCard
-              label="Flagged Workers"
-              value={phase === "empty" ? null : flagged}
-              tone="danger"
-              icon={<AlertTriangle className="w-4 h-4" />}
-              delay={0.08}
-            />
-            <StatCard
-              label="Total Payroll"
-              value={phase === "empty" ? null : totalPayroll}
-              format={formatNaira}
-              icon={<Banknote className="w-4 h-4" />}
-              delay={0.16}
-            />
-            {phase === "results" && (
-              <StatCard
-                label="Payroll Ready"
-                value={payrollReady}
-                format={formatNaira}
-                tone="primary"
-                icon={<ShieldCheck className="w-4 h-4" />}
-                delay={0.24}
-              />
-            )}
-            {phase === "results" && (
-              <StatCard
-                label="Amount Protected"
-                value={amountProtected}
-                format={formatNaira}
-                tone="danger"
-                icon={<ShieldOff className="w-4 h-4" />}
-                delay={0.32}
-              />
-            )}
-          </div>
+          {phase !== "dashboard" && (
+            <>
+              <div
+                className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${hasData ? "xl:grid-cols-5" : ""}`}
+              >
+                <StatCard
+                  label="Total Workers"
+                  value={hasData ? totalWorkers : null}
+                  icon={<Users className="w-4 h-4" />}
+                  delay={0}
+                />
+                <StatCard
+                  label="Flagged Workers"
+                  value={hasData ? flagged : null}
+                  tone="danger"
+                  icon={<AlertTriangle className="w-4 h-4" />}
+                  delay={0.08}
+                />
+                <StatCard
+                  label="Total Payroll"
+                  value={hasData ? totalPayroll : null}
+                  format={formatNaira}
+                  icon={<Banknote className="w-4 h-4" />}
+                  delay={0.16}
+                />
+                {hasData && (
+                  <StatCard
+                    label="Payroll Ready"
+                    value={payrollReady}
+                    format={formatNaira}
+                    tone="primary"
+                    icon={<ShieldCheck className="w-4 h-4" />}
+                    delay={0.24}
+                  />
+                )}
+                {hasData && (
+                  <StatCard
+                    label="Amount Protected"
+                    value={amountProtected}
+                    format={formatNaira}
+                    tone="danger"
+                    icon={<ShieldOff className="w-4 h-4" />}
+                    delay={0.32}
+                  />
+                )}
+              </div>
 
-          {phase === "results" && <DepartmentSummary workers={effective} />}
+              {hasData && <DepartmentSummary workers={effective} />}
+            </>
+          )}
 
           <div data-section="results" />
-          {phase === "results" && (
+          {hasData && phase !== "dashboard" && (
             <ResultsTable
               workers={effective}
               reviewedIds={new Set(decided.keys())}

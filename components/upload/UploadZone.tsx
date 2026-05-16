@@ -108,11 +108,11 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
                 >
                   <CheckCircle className="w-10 h-10 text-primary" strokeWidth={1.5} />
                 </div>
-                <div className="w-full max-w-[420px] flex items-center gap-3 px-4 py-3 rounded-2xl mb-3 bg-white/5 border border-white/10">
+                <div className="w-full max-w-[420px] flex items-center gap-3 px-4 py-3 rounded-2xl mb-3 bg-slate-50 border border-slate-200">
                   <FileText className="w-4 h-4 text-primary shrink-0" />
                   <div className="min-w-0 text-left">
                     <div className="text-sm font-semibold text-text-primary truncate">{picked.name}</div>
-                    <div className="text-xs text-text-tertiary text-mono mt-0.5">{formatBytes(picked.size)}</div>
+                    <div className="text-xs text-text-secondary text-mono mt-0.5">{formatBytes(picked.size)}</div>
                   </div>
                   <button
                     onClick={clear}
@@ -123,8 +123,7 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); onUpload(picked, rowCount); }}
-                  className="h-11 px-8 rounded-full text-sm font-semibold text-[#06080F]"
-                  style={{ background: "linear-gradient(135deg, #00E5A0, #00B87F)" }}
+                  className="h-11 px-8 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition"
                 >
                   Analyse payroll
                 </button>
@@ -148,8 +147,8 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
                   className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
                   style={
                     error
-                      ? { background: "rgba(255,76,110,0.08)", border: "1px solid rgba(255,76,110,0.2)" }
-                      : { background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)" }
+                      ? { background: "rgba(217,45,32,0.08)", border: "1px solid rgba(217,45,32,0.2)" }
+                      : { background: "rgba(255,106,0,0.1)", border: "1px solid rgba(255,106,0,0.18)" }
                   }
                 >
                   {error ? (

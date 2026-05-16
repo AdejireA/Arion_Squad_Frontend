@@ -103,10 +103,10 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
       className="glass overflow-hidden"
     >
       {/* toolbar */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 sm:p-5 border-b border-white/5">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 sm:p-5 border-b border-slate-200 bg-slate-50">
         <div
           className="flex items-center gap-2 p-1 rounded-2xl overflow-x-auto"
-          style={{ background: "rgba(255,255,255,0.04)" }}
+          style={{ background: "rgba(255,255,255,0.98)" }}
         >
           {tabs.map((t) => (
             <button
@@ -137,10 +137,10 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
           <button
             disabled={!canProcess}
             onClick={onProcess}
-            className={`h-10 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold transition w-full lg:w-auto ${canProcess ? "text-primary" : "text-text-tertiary cursor-not-allowed"}`}
+            className={`h-10 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold transition w-full lg:w-auto ${canProcess ? "text-white" : "text-text-tertiary cursor-not-allowed"}`}
             style={{
-              background: canProcess ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.05)",
-              border: `1px solid ${canProcess ? "rgba(0,229,160,0.22)" : "rgba(255,255,255,0.08)"}`,
+              background: canProcess ? "#FF6A00" : "rgba(255,106,0,0.08)",
+              border: `1px solid ${canProcess ? "rgba(255,106,0,0.3)" : "rgba(255,106,0,0.12)"}`,
             }}
           >
             Process payroll <ArrowRight className="w-4 h-4" />
@@ -155,17 +155,17 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
       </div>
 
       {/* mobile card list */}
-      <div className="sm:hidden divide-y divide-white/[0.04]">
+      <div className="sm:hidden divide-y divide-slate-200">
         {filtered.map((w) => (
           <button
             key={w.id}
             onClick={() => onSelect(w)}
-            className="w-full text-left p-4 hover:bg-white/[0.04] transition-colors"
+            className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
           >
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="min-w-0">
                 <div className="text-text-primary text-sm font-medium truncate">{w.name}</div>
-                <div className="text-mono text-[11px] text-text-tertiary mt-0.5">
+                <div className="text-mono text-[11px] text-text-tertiary mt-0.5 truncate">
                   {w.id} · {w.department}
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
             </div>
             <div className="flex items-center justify-between gap-3">
               <StatusPill s={w.status} />
-              <span className="text-mono text-sm text-text-primary whitespace-nowrap">
+              <span className="text-mono text-sm text-text-primary truncate max-w-[120px] text-right">
                 {formatNaira(w.salary)}
               </span>
             </div>
@@ -208,25 +208,25 @@ export function ResultsTable({ workers, reviewedIds, onSelect, onProcess }: Prop
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.02 }}
                 onClick={() => onSelect(w)}
-                className="border-t border-white/[0.04] hover:bg-white/[0.04] cursor-pointer transition-colors group"
-                style={{ background: i % 2 ? "rgba(255,255,255,0.01)" : "transparent" }}
+                className="border-t border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors group"
+                style={{ background: i % 2 ? "rgba(241,245,255,0.75)" : "transparent" }}
               >
-                <td className="px-6 py-4 text-mono text-sm text-text-secondary whitespace-nowrap">
-                  {w.id}
+                <td className="px-6 py-4 text-mono text-sm text-text-secondary min-w-0">
+                  <div className="truncate">{w.id}</div>
                 </td>
-                <td className="py-4 text-text-primary text-sm font-medium whitespace-nowrap">
-                  {w.name}
+                <td className="py-4 text-text-primary text-sm font-medium min-w-0 max-w-[220px]">
+                  <div className="truncate">{w.name}</div>
                 </td>
-                <td className="py-4 text-text-secondary text-sm whitespace-nowrap">
-                  {w.department}
+                <td className="py-4 text-text-secondary text-sm min-w-0 max-w-[180px]">
+                  <div className="truncate">{w.department}</div>
                 </td>
-                <td className="py-4 text-right text-mono text-sm text-text-primary whitespace-nowrap pr-2">
-                  {formatNaira(w.salary)}
+                <td className="py-4 text-right text-mono text-sm text-text-primary min-w-[120px] pr-2">
+                  <div className="truncate">{formatNaira(w.salary)}</div>
                 </td>
-                <td className="py-4 text-right pr-2 whitespace-nowrap">
+                <td className="py-4 text-right pr-2 min-w-[110px]">
                   <ScoreCell score={w.score} status={w.status} pulse={i < 8} />
                 </td>
-                <td className="py-4 whitespace-nowrap">
+                <td className="py-4 min-w-[110px]">
                   <StatusPill s={w.status} />
                 </td>
                 <td className="py-4 pr-6 text-right whitespace-nowrap">
