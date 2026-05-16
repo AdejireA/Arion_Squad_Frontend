@@ -25,9 +25,9 @@ export function StatCard({
   const animated = useCountUp(value ?? 0, COUNT_UP_DURATION_MS, value !== null);
   const color =
     tone === "danger"
-      ? "text-destructive text-glow-red"
+      ? "text-destructive"
       : tone === "primary"
-        ? "text-primary text-glow-teal"
+        ? "text-primary"
         : "text-text-primary";
   return (
     <motion.div

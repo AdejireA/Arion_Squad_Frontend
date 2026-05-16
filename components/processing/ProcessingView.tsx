@@ -42,82 +42,62 @@ export function ProcessingView({ total, onDone }: { total: number; onDone: () =>
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="glass p-10 relative overflow-hidden"
+      className="glass p-8 relative overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-6">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(0,229,160,0.1)" }}
+          className="w-11 h-11 rounded-2xl flex items-center justify-center"
+          style={{ background: "rgba(0,229,160,0.12)" }}
         >
           <Cpu className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary">
+          <div className="text-xs uppercase tracking-[0.18em] text-text-tertiary">
             AI Engine Active
           </div>
-          <div className="text-text-primary font-display">
+          <div className="text-text-primary font-display text-lg font-semibold">
             Sentinel Risk Model {RISK_MODEL_VERSION}
           </div>
         </div>
       </div>
 
-      <div
-        className="relative h-48 rounded-xl overflow-hidden mb-8"
-        style={{
-          background: "rgba(0,0,0,0.4)",
-          border: "1px solid rgba(255,255,255,0.04)",
-        }}
-      >
-        <div className="absolute inset-0 p-4 text-mono text-[11px] leading-[20px] text-text-tertiary opacity-60 columns-2 gap-8">
-          {[...SAMPLE_LINES, ...SAMPLE_LINES].map((l, i) => (
-            <div
-              key={i}
-              className="whitespace-nowrap overflow-hidden"
-              style={{ opacity: 0.3 + (i % 5) * 0.1 }}
-            >
-              {l}
+      <div className="rounded-3xl bg-white/5 border border-white/10 p-5 mb-8">
+        <div className="text-xs uppercase tracking-[0.16em] text-text-tertiary mb-3">
+          Scoring payroll entries
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <div className="text-sm text-text-secondary">Active sample stream</div>
+            <div className="mt-3 text-sm text-text-primary leading-6">
+              Processing the latest payroll upload and evaluating entries against fraud risk patterns.
             </div>
-          ))}
+          </div>
+          <div className="text-right">
+            <div className="text-xs uppercase tracking-[0.16em] text-text-tertiary">
+              Estimated throughput
+            </div>
+            <div className="text-2xl font-semibold text-text-primary">{total.toLocaleString()}</div>
+          </div>
         </div>
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(13,17,23,0.4) 0%, transparent 30%, transparent 70%, rgba(13,17,23,0.4) 100%)",
-          }}
-        />
-        <div
-          className="absolute top-0 bottom-0 w-32 scan-line"
-          style={{
-            background: "linear-gradient(90deg, transparent, rgba(0,229,160,0.5), transparent)",
-            boxShadow: "0 0 40px rgba(0,229,160,0.6)",
-          }}
-        />
       </div>
 
-      <div className="flex items-end justify-between mb-3">
+      <div className="flex items-center justify-between gap-4 mb-3 text-sm text-text-tertiary">
         <div>
-          <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary mb-1">
-            Scoring Records
-          </div>
-          <div className="text-mono text-3xl text-text-primary">
-            <span className="text-primary text-glow-teal">{count.toLocaleString()}</span>
-            <span className="text-text-tertiary"> / {total.toLocaleString()}</span>
+          <div className="uppercase tracking-[0.16em]">Scored</div>
+          <div className="text-text-primary text-2xl font-semibold mt-1">
+            <span>{count.toLocaleString()}</span>
+            <span className="text-text-tertiary ml-2">/ {total.toLocaleString()}</span>
           </div>
         </div>
-        <div className="text-mono text-sm text-text-secondary">{pct.toFixed(1)}%</div>
+        <div className="font-medium text-text-primary">{pct.toFixed(1)}%</div>
       </div>
 
-      <div
-        className="h-1.5 rounded-full overflow-hidden"
-        style={{ background: "rgba(255,255,255,0.05)" }}
-      >
+      <div className="h-3 rounded-full overflow-hidden bg-white/10">
         <div
-          className="h-full rounded-full transition-[width] duration-150"
+          className="h-full rounded-full transition-all duration-300"
           style={{
             width: `${pct}%`,
-            background: "linear-gradient(90deg, #00b87f, #00E5A0)",
-            boxShadow: "0 0 12px rgba(0,229,160,0.6)",
+            background: "linear-gradient(90deg, #00B87F, #00E5A0)",
           }}
         />
       </div>
