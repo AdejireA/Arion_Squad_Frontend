@@ -115,7 +115,7 @@ export function WorkerDrawer({
                     </p>
                     <div className="space-y-2">
                       {worker.reasons.map((r, i) => {
-                        const weight = Math.round(100 / worker.reasons.length);
+                        const weight = r.weight ?? Math.round(100 / worker.reasons.length);
                         return (
                           <div key={i} className="flex items-center gap-3">
                             <span className="text-xs text-text-secondary w-44 truncate">

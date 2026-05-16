@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { LayoutDashboard, Upload, ShieldCheck, FileClock, Settings } from "lucide-react";
+import { LayoutDashboard, Upload, ShieldCheck, FileClock, Settings, Clock } from "lucide-react";
 
 const items = [
   { icon: LayoutDashboard, label: "Dashboard" },
   { icon: Upload, label: "Uploads" },
   { icon: ShieldCheck, label: "Verifications" },
+  { icon: Clock, label: "History" },
   { icon: FileClock, label: "Audit Log" },
   { icon: Settings, label: "Settings" },
 ];
@@ -16,9 +17,11 @@ const items = [
 export function Sidebar({
   onAuditClick,
   onUploadClick,
+  onHistoryClick,
 }: {
   onAuditClick: () => void;
   onUploadClick: () => void;
+  onHistoryClick: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -27,6 +30,7 @@ export function Sidebar({
     else if (label === "Uploads") onUploadClick();
     else if (label === "Verifications")
       document.querySelector("[data-section='results']")?.scrollIntoView({ behavior: "smooth" });
+    else if (label === "History") onHistoryClick();
     else if (label === "Audit Log") onAuditClick();
     else if (label === "Settings") toast.info("Settings coming in v2");
   }
