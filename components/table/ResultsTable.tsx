@@ -15,18 +15,18 @@ const tabs: { key: "all" | Status; label: string; dot?: string }[] = [
 
 function StatusPill({ s }: { s: Status }) {
   const map = {
-    verified: { bg: "rgba(0,229,160,0.10)", color: "#00E5A0", label: "Verified" },
-    review: { bg: "rgba(255,182,40,0.10)", color: "#FFB628", label: "Review" },
-    blocked: { bg: "rgba(255,76,110,0.10)", color: "#FF4C6E", label: "Blocked" },
+    verified: { bg: "rgba(0,229,160,0.12)", color: "#00E5A0", label: "Verified" },
+    review: { bg: "rgba(255,182,40,0.12)", color: "#FFB628", label: "Review" },
+    blocked: { bg: "rgba(255,76,110,0.12)", color: "#FF4C6E", label: "Blocked" },
   }[s];
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider"
-      style={{ background: map.bg, color: map.color, border: `1px solid ${map.color}33` }}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.18em]"
+      style={{ background: map.bg, color: map.color, border: `1px solid ${map.color}22` }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
-        style={{ background: map.color, boxShadow: `0 0 8px ${map.color}` }}
+        style={{ background: map.color }}
       />
       {map.label}
     </span>
@@ -44,13 +44,13 @@ function ScoreCell({
 }) {
   const cls =
     status === "verified"
-      ? "text-primary text-glow-teal"
+      ? "text-primary"
       : status === "review"
-        ? "text-caution text-glow-gold"
-        : "text-destructive text-glow-red";
+        ? "text-caution"
+        : "text-destructive";
   return (
     <span
-      className={`text-mono text-lg font-medium ${cls} ${pulse ? "pulse-once inline-block" : ""}`}
+      className={`text-mono text-lg font-semibold ${cls} ${pulse ? "inline-block" : ""}`}
     >
       {score}
     </span>
