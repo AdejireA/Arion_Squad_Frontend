@@ -77,9 +77,9 @@
   html, body { background-color: var(--base); color: var(--text-primary); font-family: var(--font-sans); }
   body {
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% 20%, rgba(0,229,160,0.04), transparent 60%),
-      radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: auto, 24px 24px;
+      radial-gradient(circle at top, rgba(0,229,160,0.06), transparent 18%),
+      linear-gradient(180deg, #070a11 0%, #090d14 100%);
+    background-size: auto, auto;
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -88,28 +88,26 @@
 
 @layer components {
   .glass {
-    background: rgba(255,255,255,0.03);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-top-color: rgba(255,255,255,0.10);
-    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
   }
   .glass-strong {
-    background: rgba(13,17,23,0.85);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-top-color: rgba(255,255,255,0.12);
-    border-radius: 16px;
+    background: rgba(12,16,22,0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
   }
   .text-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-  .glow-teal { box-shadow: 0 0 40px rgba(0,229,160,0.20), inset 0 1px 0 rgba(255,255,255,0.10); }
-  .text-glow-teal { text-shadow: 0 0 20px rgba(0,229,160,0.35); }
-  .text-glow-red { text-shadow: 0 0 20px rgba(255,76,110,0.35); }
-  .text-glow-gold { text-shadow: 0 0 20px rgba(255,182,40,0.30); }
+  .glow-teal { box-shadow: 0 0 20px rgba(0,229,160,0.16); }
+  .text-glow-teal { text-shadow: 0 0 12px rgba(0,229,160,0.18); }
+  .text-glow-red { text-shadow: 0 0 12px rgba(255,76,110,0.18); }
+  .text-glow-gold { text-shadow: 0 0 12px rgba(255,182,40,0.18); }
   .ambient-teal {
-    background: radial-gradient(ellipse at center, rgba(0,229,160,0.08) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(0,229,160,0.05) 0%, transparent 65%);
   }
 }
 

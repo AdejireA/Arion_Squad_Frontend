@@ -36,25 +36,22 @@ export function Sidebar({
       <motion.aside
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        animate={{ width: open ? 240 : 72 }}
-        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed left-0 top-0 h-screen z-40 overflow-hidden hidden md:block"
+        animate={{ width: open ? 236 : 76 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed left-0 top-0 h-screen z-40 overflow-hidden hidden md:flex flex-col"
         style={{
-          background: "rgba(6,8,15,0.85)",
-          backdropFilter: "blur(20px)",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
+          background: "rgba(8,12,20,0.92)",
+          backdropFilter: "blur(22px)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <div className="h-16 flex items-center px-5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#00E5A0,#00b87f)" }}
-          >
-            <ShieldCheck className="w-5 h-5 text-[#06080F]" strokeWidth={2.5} />
+        <div className="h-16 flex items-center px-5 border-b border-white/5">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary/15">
+            <ShieldCheck className="w-5 h-5 text-primary" strokeWidth={2.5} />
           </div>
           {open && (
-            <span className="ml-3 font-display font-bold tracking-wide text-text-primary">
-              SENTINEL
+            <span className="ml-3 font-display font-semibold tracking-wide text-text-primary">
+              Sentinel
             </span>
           )}
         </div>
@@ -63,14 +60,14 @@ export function Sidebar({
             <button
               key={it.label}
               onClick={() => handleNav(it.label)}
-              className="w-full flex items-center h-11 px-3 rounded-lg hover:bg-white/5 transition-colors text-text-secondary hover:text-text-primary group"
+              className="w-full flex items-center h-12 px-3 rounded-xl transition-colors text-text-secondary hover:text-text-primary hover:bg-white/5"
             >
               <it.icon className="w-5 h-5 shrink-0" strokeWidth={1.75} />
               {open && (
-                <span className="ml-3 text-sm font-medium whitespace-nowrap">{it.label}</span>
+                <span className="ml-4 text-sm font-medium whitespace-nowrap">{it.label}</span>
               )}
               {!open && i === 0 && (
-                <span className="absolute left-1.5 w-0.5 h-6 rounded-r bg-primary" />
+                <span className="absolute left-2 w-0.5 h-6 rounded-r bg-primary" />
               )}
             </button>
           ))}
@@ -81,16 +78,16 @@ export function Sidebar({
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 md:hidden flex items-center justify-around h-16 px-2"
         style={{
-          background: "rgba(6,8,15,0.92)",
+          background: "rgba(8,12,20,0.94)",
           backdropFilter: "blur(20px)",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         {items.map((it, i) => (
           <button
             key={it.label}
             onClick={() => handleNav(it.label)}
-            className={`flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-md transition-colors ${i === 0 ? "text-primary" : "text-text-secondary"}`}
+            className={`flex flex-col items-center justify-center gap-1 px-2 py-1 rounded-lg transition-colors ${i === 0 ? "text-primary" : "text-text-secondary"}`}
           >
             <it.icon className="w-5 h-5" strokeWidth={1.75} />
             <span className="text-[10px] font-medium">{it.label}</span>

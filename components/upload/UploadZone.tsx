@@ -80,16 +80,16 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
 
   return (
     <motion.div layout className="relative">
-      <div className="absolute inset-0 ambient-teal blur-2xl pointer-events-none" />
+      <div className="absolute inset-0 ambient-teal blur-2xl pointer-events-none opacity-10" />
       <div
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
         onDrop={handleDrop}
         onClick={() => !picked && inputRef.current?.click()}
         className={`relative glass overflow-hidden transition-colors ${picked ? "cursor-default" : "cursor-pointer group"}`}
-        style={{ padding: "56px 32px" }}
+        style={{ padding: "48px 28px" }}
       >
-        <div className={`absolute inset-3 rounded-xl ${drag ? "dashed-border" : ""}`} />
+        <div className={`absolute inset-3 rounded-3xl transition ${drag ? "border border-dashed border-primary/40" : ""}`} />
 
         <div className="relative flex flex-col items-center text-center">
           <AnimatePresence mode="wait">
@@ -97,47 +97,40 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
               /* ── File selected state ── */
               <motion.div
                 key="picked"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 className="flex flex-col items-center"
               >
                 <div
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: "rgba(0,229,160,0.10)", border: "1px solid rgba(0,229,160,0.3)" }}
+                  className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
+                  style={{ background: "rgba(0,229,160,0.12)", border: "1px solid rgba(0,229,160,0.22)" }}
                 >
                   <CheckCircle className="w-10 h-10 text-primary" strokeWidth={1.5} />
                 </div>
-                <div
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl mb-3"
-                  style={{ background: "rgba(0,229,160,0.06)", border: "1px solid rgba(0,229,160,0.2)" }}
-                >
+                <div className="w-full max-w-[420px] flex items-center gap-3 px-4 py-3 rounded-2xl mb-3 bg-white/5 border border-white/10">
                   <FileText className="w-4 h-4 text-primary shrink-0" />
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-text-primary truncate max-w-[260px]">
-                      {picked.name}
-                    </div>
-                    <div className="text-xs text-text-tertiary text-mono mt-0.5">
-                      {formatBytes(picked.size)}
-                    </div>
+                  <div className="min-w-0 text-left">
+                    <div className="text-sm font-semibold text-text-primary truncate">{picked.name}</div>
+                    <div className="text-xs text-text-tertiary text-mono mt-0.5">{formatBytes(picked.size)}</div>
                   </div>
                   <button
                     onClick={clear}
-                    className="ml-2 p-1 rounded-md hover:bg-white/10 text-text-tertiary hover:text-text-primary transition"
+                    className="ml-2 p-1 rounded-full hover:bg-white/10 text-text-tertiary transition"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); onUpload(picked, rowCount); }}
-                  className="h-11 px-8 rounded-lg text-sm font-medium text-[#06080F] glow-teal"
-                  style={{ background: "linear-gradient(135deg,#00E5A0,#00b87f)" }}
+                  className="h-11 px-8 rounded-full text-sm font-semibold text-[#06080F]"
+                  style={{ background: "linear-gradient(135deg, #00E5A0, #00B87F)" }}
                 >
-                  Analyse Payroll
+                  Analyse payroll
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                  className="mt-3 text-xs text-text-tertiary hover:text-text-secondary transition underline-offset-4 hover:underline"
+                  className="mt-3 text-xs text-text-tertiary hover:text-text-primary transition underline-offset-4 hover:underline"
                 >
                   Choose a different file
                 </button>
@@ -146,37 +139,35 @@ export function UploadZone({ onUpload }: { onUpload: (file: File, rowCount: numb
               /* ── Default / error state ── */
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 className="flex flex-col items-center"
               >
                 <div
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
+                  className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
                   style={
                     error
                       ? { background: "rgba(255,76,110,0.08)", border: "1px solid rgba(255,76,110,0.2)" }
                       : { background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)" }
                   }
                 >
-                  {error
-                    ? <AlertCircle className="w-10 h-10 text-destructive" strokeWidth={1.5} />
-                    : <UploadCloud className="w-10 h-10 text-primary" strokeWidth={1.5} />
-                  }
+                  {error ? (
+                    <AlertCircle className="w-10 h-10 text-destructive" strokeWidth={1.5} />
+                  ) : (
+                    <UploadCloud className="w-10 h-10 text-primary" strokeWidth={1.5} />
+                  )}
                 </div>
-                <h2 className="text-2xl text-text-primary mb-2">
-                  {error ? "Upload failed" : "Drop your payroll CSV here"}
+                <h2 className="text-2xl text-text-primary mb-2 font-semibold">
+                  {error ? "Upload failed" : "Upload payroll data"}
                 </h2>
                 {error ? (
                   <p className="text-destructive text-sm mb-2">{error}</p>
-                ) : null}
-                <p className="text-text-secondary text-sm">
-                  or{" "}
-                  <span className="text-primary underline-offset-4 hover:underline cursor-pointer">
-                    browse files
-                  </span>{" "}
-                  from your device
-                </p>
+                ) : (
+                  <p className="max-w-[420px] text-text-secondary text-sm">
+                    Drag and drop your CSV or XLSX file, or browse to select it from your device.
+                  </p>
+                )}
                 <div className="flex items-center gap-2 mt-6 text-text-tertiary text-xs text-mono">
                   <FileText className="w-3.5 h-3.5" />
                   <span>SUPPORTED: .CSV · .XLSX · MAX {MAX_UPLOAD_SIZE_MB}MB</span>
