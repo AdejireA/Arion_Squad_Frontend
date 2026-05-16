@@ -1,203 +1,35 @@
-# Sentinel — AI Payroll Integrity Frontend
+# Sentinel Frontend
 
-AI-powered payroll fraud detection dashboard for state government HR officers. Detects ghost workers, duplicate BVNs, salary anomalies, and attendance irregularities before payroll is disbursed.
-
----
+Next.js 14 dashboard for HR officers to upload payroll CSV files, review ML-scored workers, override flagged decisions, and process verified payments through the Squad disbursement API. The backend scores each worker against a fraud and anomaly model and returns trust scores, reason codes, and feature weights that populate the trust gauge and score driver bars.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Next.js 15](https://nextjs.org) (App Router) |
-| Language | TypeScript 5.8 |
-| Styling | Tailwind CSS v4 + custom design tokens |
-| UI Components | [shadcn/ui](https://ui.shadcn.com) (Radix UI primitives) |
-| Animations | [Framer Motion](https://www.framer.com/motion/) |
-| Data Fetching | [TanStack Query v5](https://tanstack.com/query) |
-| Icons | [Lucide React](https://lucide.dev) |
-| Forms | React Hook Form + Zod |
-| Fonts | Space Grotesk · Inter · JetBrains Mono (Google Fonts) |
-| Notifications | [Sonner](https://sonner.emilkowal.ski) (toast) |
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Framer Motion
 
----
+## Setup
 
-## Folder Structure
-
-```
-sentinel-frontend/
-├── app/                      # Next.js App Router
-│   ├── layout.tsx            # Root layout + metadata
-│   ├── page.tsx              # Main dashboard page
-│   ├── globals.css           # Global styles + Tailwind theme
-│   └── icon.svg              # SVG favicon
-├── components/
-│   ├── dashboard/            # Sidebar, StatCard
-│   ├── table/                # ResultsTable (worker list)
-│   ├── drawer/               # WorkerDrawer, AuditDrawer
-│   ├── modal/                # PaymentModal
-│   ├── upload/               # UploadZone (CSV/XLSX drop)
-│   ├── processing/           # ProcessingView (AI scan animation)
-│   ├── providers.tsx         # TanStack Query client wrapper
-│   └── ui/                   # shadcn/ui base components (46 total)
-├── hooks/
-│   ├── use-count-up.ts       # Animated number counter
-│   └── use-mobile.tsx        # Responsive breakpoint hook
-├── lib/
-│   ├── utils.ts              # cn() Tailwind class utility
-│   ├── api.ts                # API client — upload, workers, payment, audit, overrides
-│   └── sentinel-data.ts      # formatNaira + departmentAverages helpers
-├── types/
-│   └── index.ts              # Worker, Status types
-├── constants/
-│   └── index.ts              # App-wide constants (timing, labels, limits)
-├── public/                   # Static assets
-├── next.config.ts
-├── postcss.config.mjs        # Tailwind v4 PostCSS setup
-├── tailwind.config            # (config-in-CSS via @theme in globals.css)
-├── tsconfig.json
-└── package.json
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+ or Bun 1.x
-- npm / yarn / pnpm / bun
-
-### Install dependencies
-
-```bash
-npm install
-# or
-bun install
-```
-
-### Run the development server
-
-```bash
-npm run dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### Build for production
-
-```bash
-npm run build
-npm start
-```
-
----
+1. Clone the repository
+2. Run `npm install`
+3. Copy `.env.local.example` to `.env.local` and fill in the values
+4. Run `npm run dev`
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in the values:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Yes | Backend base URL |
+| `NEXT_PUBLIC_API_KEY` | Yes | Must match `SENTINEL_API_KEY` on the backend |
 
-```bash
-cp .env.example .env.local
-```
+## Key Components
 
-| Variable | Description | Required |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Base URL of the Sentinel backend API | **Yes** — all data comes from the API |
-| `NEXT_PUBLIC_APP_ENV` | `development` \| `staging` \| `production` | No |
+UploadZone accepts CSV or XLSX payroll files and counts rows client-side before upload. ProcessingView animates a row counter under the Sentinel Risk Model v2.4 label while the backend scores each record. ResultsTable sorts workers into three bands — verified, review, and blocked — with per-band column filtering. WorkerDrawer opens on row click and shows a circular trust score gauge, score driver bars sized by feature weight, risk indicator pills, and a salary comparison against the department average. PaymentModal steps through three stages — summary, paying, and done — and calls the Squad disbursement API for each verified worker. AuditDrawer fetches the transfer event log for a completed upload. DepartmentSummary breaks down blocked, review, and salary-at-risk counts by department. UploadHistory lists all past uploads with filename, row count, and timestamp.
 
----
+## How It Works
 
-## Connecting to the Backend API
-
-Set `NEXT_PUBLIC_API_URL` in `.env.local`:
-
-```
-NEXT_PUBLIC_API_URL=https://api.sentinel.yourdomain.com
-```
-
-All API logic lives in [lib/api.ts](lib/api.ts). The app has no offline/dummy-data fallback — all features require a running backend.
-
-### Endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/upload` | Upload a payroll CSV/XLSX file |
-| `GET` | `/workers?upload_id=<id>` | Fetch scored workers for an upload |
-| `PATCH` | `/workers/{id}` | Override a worker's status (`verified` or `blocked`) |
-| `POST` | `/payroll/process` | Disburse verified workers — body: `{ upload_id }` |
-| `GET` | `/audit-log?upload_id=<id>` | Fetch the immutable audit log for an upload |
-
-### Upload request
-
-`multipart/form-data` with a single field `file`.
-
-### Upload response
-
-```json
-{ "upload_id": "abc123", "row_count": 1200, "scored": 1195, "blocked": 3 }
-```
-
-### Workers response
-
-```json
-{
-  "upload_id": "abc123",
-  "workers": [
-    {
-      "id": "OG-10428",
-      "upload_id": "abc123",
-      "full_name": "Adebayo Oladele",
-      "bank_account": "0123456789",
-      "bank_code": "058",
-      "salary": 185000,
-      "grade": "Health",
-      "trust_score": 96,
-      "status": "verified",
-      "reason_codes": []
-    }
-  ]
-}
-```
-
-### Field mapping (backend → frontend)
-
-| Backend | Frontend | Notes |
-|---|---|---|
-| `full_name` | `name` | |
-| `trust_score` | `score` | |
-| `grade` | `department` | |
-| `"paid"` / `"pending"` | `"verified"` | post-payment normalisation |
-| `"failed"` | `"blocked"` | post-payment normalisation |
-| `reason_codes[]` | `reasons[{label, severity}]` | humanised in `lib/api.ts` |
-
-The full type definitions are in [types/index.ts](types/index.ts).
-
----
-
-## Design System
-
-The app uses a dark-first design system defined entirely in CSS variables inside [app/globals.css](app/globals.css):
-
-| Token | Value | Usage |
-|---|---|---|
-| `--primary` | `#00E5A0` | Teal — verified, success, actions |
-| `--destructive` | `#FF4C6E` | Red — blocked, high risk |
-| `--caution` | `#FFB628` | Gold — under review, warnings |
-| `--base` | `#06080F` | Page background |
-| `--surface` | `#161B26` | Card / panel background |
-
-Custom utility classes: `.glass`, `.glass-strong`, `.glow-teal`, `.text-glow-*`, `.ambient-teal`.
-
----
-
-## Available Scripts
-
-| Script | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format with Prettier |
+1. HR officer drops a payroll CSV; the frontend counts rows locally and sends the file to the backend.
+2. The backend scores each worker against the risk model; the UI holds on the processing screen until both the animation and API response finish.
+3. Workers appear in three bands: verified (cleared for payment), review (held for inspection), and blocked (flagged for fraud or anomalies).
+4. HR officers can override individual decisions in the WorkerDrawer, then open PaymentModal to disburse verified salaries via Squad.

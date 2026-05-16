@@ -7,11 +7,13 @@ import { Users, AlertTriangle, Banknote, ShieldCheck, ShieldOff } from "lucide-r
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { DepartmentSummary } from "@/components/dashboard/DepartmentSummary";
 import { ProcessingView } from "@/components/processing/ProcessingView";
 import { ResultsTable } from "@/components/table/ResultsTable";
 import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
 import { AuditDrawer } from "@/components/drawer/AuditDrawer";
+import { UploadHistory } from "@/components/dashboard/UploadHistory";
 import { formatNaira, departmentAverages } from "@/lib/sentinel-data";
 import { uploadPayroll, fetchWorkers, patchWorkerStatus } from "@/lib/api";
 import type { Worker } from "@/types";
@@ -30,6 +32,7 @@ export default function Page() {
   const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
   const [payOpen, setPayOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     if (phase === "processing" && animDone && apiFetched) {
@@ -98,7 +101,11 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <Sidebar onAuditClick={() => setAuditOpen(true)} onUploadClick={() => setPhase("empty")} />
+      <Sidebar
+        onAuditClick={() => setAuditOpen(true)}
+        onUploadClick={() => setPhase("empty")}
+        onHistoryClick={() => setHistoryOpen(true)}
+      />
 
       <main className="md:pl-[72px] pb-20 md:pb-0">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8">
@@ -203,6 +210,8 @@ export default function Page() {
             )}
           </div>
 
+          {phase === "results" && <DepartmentSummary workers={effective} />}
+
           <div data-section="results" />
           {phase === "results" && (
             <ResultsTable
@@ -237,6 +246,7 @@ export default function Page() {
         onViewAudit={() => setAuditOpen(true)}
       />
       <AuditDrawer open={auditOpen} uploadId={uploadId} onClose={() => setAuditOpen(false)} />
+      <UploadHistory open={historyOpen} onClose={() => setHistoryOpen(false)} />
     </div>
   );
 }

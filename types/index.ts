@@ -12,6 +12,7 @@ export interface WorkerOut {
   trust_score: number;
   status: "verified" | "review" | "blocked" | "pending" | "paid" | "failed";
   reason_codes: string[];
+  feature_weights?: Record<string, number>;
 }
 
 // ── Frontend domain types ─────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ export interface Worker {
   salary: number;
   score: number;
   status: Status;
-  reasons: { label: string; severity: "high" | "medium" }[];
+  reasons: { label: string; severity: "high" | "medium"; weight?: number }[];
 }
 
 export interface AuditEvent {
