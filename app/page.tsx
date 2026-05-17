@@ -15,12 +15,13 @@ import { WorkerDrawer } from "@/components/drawer/WorkerDrawer";
 import { PaymentModal } from "@/components/modal/PaymentModal";
 import { AuditDrawer } from "@/components/drawer/AuditDrawer";
 import { UploadHistory } from "@/components/dashboard/UploadHistory";
+import { PayrollView } from "@/components/payroll/PayrollView";
 import { formatNaira, departmentAverages } from "@/lib/sentinel-data";
 import { uploadPayroll, fetchWorkers, patchWorkerStatus } from "@/lib/api";
 import type { Worker } from "@/types";
 import { APP_VERSION, OFFICE_LOCATION } from "@/constants";
 
-type Phase = "dashboard" | "empty" | "processing" | "results";
+type Phase = "dashboard" | "empty" | "processing" | "results" | "payroll";
 
 const SESSION_KEY = "sentinel_session";
 
@@ -42,23 +43,29 @@ function loadSession() {
 }
 
 export default function Page() {
-  const [phase, setPhase] = useState<Phase>(() => loadSession()?.phase ?? "dashboard");
-  const [workers, setWorkers] = useState<Worker[]>(() => loadSession()?.workers ?? []);
-  const [uploadId, setUploadId] = useState<string>(() => loadSession()?.uploadId ?? "");
-  const [rowCount, setRowCount] = useState<number>(() => loadSession()?.rowCount ?? 1200);
+  // Always start with server-safe defaults to avoid SSR/client hydration mismatch.
+  // sessionStorage is read in a useEffect after mount.
+  const [phase, setPhase] = useState<Phase>("dashboard");
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [uploadId, setUploadId] = useState<string>("");
+  const [rowCount, setRowCount] = useState<number>(1200);
   const [animDone, setAnimDone] = useState(false);
   const [apiFetched, setApiFetched] = useState(false);
   const [selected, setSelected] = useState<Worker | null>(null);
-  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(
-    () => loadSession()?.decided ?? new Map(),
-  );
+  const [decided, setDecided] = useState<Map<string, "approve" | "block">>(new Map());
   const [payOpen, setPayOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // If we restored a "processing" session we can't resume — jump straight to results
+  // Restore persisted session after mount (runs only on client)
   useEffect(() => {
-    if (phase === "processing" && workers.length > 0) setPhase("results");
+    const saved = loadSession();
+    if (!saved) return;
+    setPhase(saved.phase === "processing" ? "results" : saved.phase);
+    setWorkers(saved.workers);
+    setUploadId(saved.uploadId);
+    setRowCount(saved.rowCount);
+    setDecided(saved.decided);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -154,12 +161,14 @@ export default function Page() {
       <Sidebar
         onAuditClick={() => setAuditOpen(true)}
         onUploadClick={() => setPhase("empty")}
-        onHistoryClick={() => setHistoryOpen(true)}
-        onDashboardClick={() => setPhase(hasData ? "results" : "dashboard")}
+        onHistoryClick={() => setPhase("payroll")}
+        onDashboardClick={() => setPhase("dashboard")}
+        onVerificationsClick={() => setPhase(hasData ? "results" : "empty")}
         activeLabel={
-          phase === "dashboard" ? "Dashboard"
-          : phase === "empty" ? "Uploads"
+          phase === "dashboard"  ? "Dashboard"
+          : phase === "empty"   ? "Uploads"
           : phase === "processing" ? "Uploads"
+          : phase === "payroll" ? "History"
           : "Verifications"
         }
       />
@@ -196,6 +205,16 @@ export default function Page() {
                 />
               </motion.div>
             )}
+            {phase === "payroll" && (
+              <motion.div key="payroll" exit={{ opacity: 0, y: -10 }} className="mb-8">
+                <PayrollView
+                  workers={effective}
+                  uploadId={uploadId}
+                  onProcessPayroll={() => setPayOpen(true)}
+                  onNewUpload={() => setPhase("empty")}
+                />
+              </motion.div>
+            )}
             {phase === "empty" && (
               <motion.div key="empty" exit={{ opacity: 0, y: -10 }} className="mb-8">
                 <div className="text-center mb-8">
@@ -213,7 +232,7 @@ export default function Page() {
             )}
           </AnimatePresence>
 
-          {phase !== "dashboard" && (
+          {phase !== "dashboard" && phase !== "payroll" && (
             <>
               <div
                 className={`grid gap-3 sm:gap-4 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${hasData ? "xl:grid-cols-5" : ""}`}
@@ -265,7 +284,7 @@ export default function Page() {
           )}
 
           <div data-section="results" />
-          {hasData && phase !== "dashboard" && (
+          {hasData && phase !== "dashboard" && phase !== "payroll" && (
             <ResultsTable
               workers={effective}
               reviewedIds={new Set(decided.keys())}

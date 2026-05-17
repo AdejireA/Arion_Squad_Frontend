@@ -19,18 +19,19 @@ export function Sidebar({
   onUploadClick,
   onHistoryClick,
   onDashboardClick,
+  onVerificationsClick,
   activeLabel = "Dashboard",
 }: {
   onAuditClick: () => void;
   onUploadClick: () => void;
   onHistoryClick: () => void;
   onDashboardClick?: () => void;
+  onVerificationsClick?: () => void;
   activeLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(activeLabel);
 
-  // Sync when the parent changes the active label (e.g. phase change from upload)
   useEffect(() => { setActive(activeLabel); }, [activeLabel]);
 
   function handleNav(label: string) {
@@ -39,8 +40,7 @@ export function Sidebar({
       onDashboardClick?.();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (label === "Uploads") onUploadClick();
-    else if (label === "Verifications")
-      document.querySelector("[data-section='results']")?.scrollIntoView({ behavior: "smooth" });
+    else if (label === "Verifications") onVerificationsClick?.();
     else if (label === "History") onHistoryClick();
     else if (label === "Audit Log") onAuditClick();
     else if (label === "Settings") toast.info("Settings coming in v2");
